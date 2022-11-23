@@ -4,7 +4,7 @@ import com.edwin.manager.GameEngine;
 import com.edwin.model.GameObject;
 import com.edwin.model.hero.Mario;
 
-import java.awt.*;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 public class Coin extends GameObject implements Prize {

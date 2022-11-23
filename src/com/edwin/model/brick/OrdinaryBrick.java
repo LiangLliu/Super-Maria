@@ -1,7 +1,6 @@
 package com.edwin.model.brick;
 
 import com.edwin.manager.GameEngine;
-import com.edwin.manager.MapManager;
 import com.edwin.model.prize.Prize;
 import com.edwin.view.Animation;
 import com.edwin.view.ImageLoader;
@@ -25,15 +24,15 @@ public class OrdinaryBrick extends Brick {
     }
 
     private void setAnimation() {
-        ImageLoader imageLoader = new ImageLoader();
-        BufferedImage[] leftFrames = imageLoader.getBrickFrames();
+        var imageLoader = new ImageLoader();
+        var leftFrames = imageLoader.getBrickFrames();
 
         animation = new Animation(leftFrames, leftFrames);
     }
 
     @Override
     public Prize reveal(GameEngine engine) {
-        MapManager manager = engine.getMapManager();
+        var manager = engine.getMapManager();
         if (!manager.getMario().isSuper())
             return null;
 

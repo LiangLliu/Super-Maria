@@ -27,11 +27,11 @@ public class Mario extends GameObject{
         coins = 0;
         invincibilityTimer = 0;
 
-        ImageLoader imageLoader = new ImageLoader();
-        BufferedImage[] leftFrames = imageLoader.getLeftFrames(MarioForm.SMALL);
-        BufferedImage[] rightFrames = imageLoader.getRightFrames(MarioForm.SMALL);
+        var imageLoader = new ImageLoader();
+        var leftFrames = imageLoader.getLeftFrames(MarioForm.SMALL);
+        var rightFrames = imageLoader.getRightFrames(MarioForm.SMALL);
 
-        Animation animation = new Animation(leftFrames, rightFrames);
+        var animation = new Animation(leftFrames, rightFrames);
         marioForm = new MarioForm(animation, false, false);
         setStyle(marioForm.getCurrentStyle(toRight, false, false));
     }

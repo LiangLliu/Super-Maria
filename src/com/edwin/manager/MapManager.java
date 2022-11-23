@@ -249,53 +249,52 @@ public class MapManager {
     }
 
     private void checkPrizeCollision() {
-        ArrayList<Prize> prizes = map.getRevealedPrizes();
-        ArrayList<Brick> bricks = map.getAllBricks();
+        var prizes = map.getRevealedPrizes();
+        var bricks = map.getAllBricks();
 
         for (Prize prize : prizes) {
-            if (prize instanceof BoostItem) {
-                BoostItem boost = (BoostItem) prize;
-                Rectangle prizeBottomBounds = boost.getBottomBounds();
-                Rectangle prizeRightBounds = boost.getRightBounds();
-                Rectangle prizeLeftBounds = boost.getLeftBounds();
-                boost.setFalling(true);
+            if (prize instanceof BoostItem boostItem) {
+                var prizeBottomBounds = boostItem.getBottomBounds();
+                var prizeRightBounds = boostItem.getRightBounds();
+                var prizeLeftBounds = boostItem.getLeftBounds();
+                boostItem.setFalling(true);
 
                 for (Brick brick : bricks) {
                     Rectangle brickBounds;
 
-                    if (boost.isFalling()) {
+                    if (boostItem.isFalling()) {
                         brickBounds = brick.getTopBounds();
 
                         if (brickBounds.intersects(prizeBottomBounds)) {
-                            boost.setFalling(false);
-                            boost.setVelY(0);
-                            boost.setY(brick.getY() - boost.getDimension().height + 1);
-                            if (boost.getVelX() == 0)
-                                boost.setVelX(2);
+                            boostItem.setFalling(false);
+                            boostItem.setVelY(0);
+                            boostItem.setY(brick.getY() - boostItem.getDimension().height + 1);
+                            if (boostItem.getVelX() == 0)
+                                boostItem.setVelX(2);
                         }
                     }
 
-                    if (boost.getVelX() > 0) {
+                    if (boostItem.getVelX() > 0) {
                         brickBounds = brick.getLeftBounds();
 
                         if (brickBounds.intersects(prizeRightBounds)) {
-                            boost.setVelX(-boost.getVelX());
+                            boostItem.setVelX(-boostItem.getVelX());
                         }
-                    } else if (boost.getVelX() < 0) {
+                    } else if (boostItem.getVelX() < 0) {
                         brickBounds = brick.getRightBounds();
 
                         if (brickBounds.intersects(prizeLeftBounds)) {
-                            boost.setVelX(-boost.getVelX());
+                            boostItem.setVelX(-boostItem.getVelX());
                         }
                     }
                 }
 
-                if (boost.getY() + boost.getDimension().height > map.getBottomBorder()) {
-                    boost.setFalling(false);
-                    boost.setVelY(0);
-                    boost.setY(map.getBottomBorder() - boost.getDimension().height);
-                    if (boost.getVelX() == 0)
-                        boost.setVelX(2);
+                if (boostItem.getY() + boostItem.getDimension().height > map.getBottomBorder()) {
+                    boostItem.setFalling(false);
+                    boostItem.setVelY(0);
+                    boostItem.setY(map.getBottomBorder() - boostItem.getDimension().height);
+                    if (boostItem.getVelX() == 0)
+                        boostItem.setVelX(2);
                 }
 
             }
@@ -321,16 +320,16 @@ public class MapManager {
     }
 
     private void checkFireballContact() {
-        ArrayList<Fireball> fireballs = map.getFireballs();
-        ArrayList<Enemy> enemies = map.getEnemies();
-        ArrayList<Brick> bricks = map.getAllBricks();
-        ArrayList<GameObject> toBeRemoved = new ArrayList<>();
+        var fireballs = map.getFireballs();
+        var enemies = map.getEnemies();
+        var bricks = map.getAllBricks();
+        var toBeRemoved = new ArrayList<GameObject>();
 
         for (Fireball fireball : fireballs) {
-            Rectangle fireballBounds = fireball.getBounds();
+            var fireballBounds = fireball.getBounds();
 
             for (Enemy enemy : enemies) {
-                Rectangle enemyBounds = enemy.getBounds();
+                var enemyBounds = enemy.getBounds();
                 if (fireballBounds.intersects(enemyBounds)) {
                     acquirePoints(100);
                     toBeRemoved.add(enemy);
@@ -339,7 +338,7 @@ public class MapManager {
             }
 
             for (Brick brick : bricks) {
-                Rectangle brickBounds = brick.getBounds();
+                var brickBounds = brick.getBounds();
                 if (fireballBounds.intersects(brickBounds)) {
                     toBeRemoved.add(fireball);
                 }
@@ -350,14 +349,15 @@ public class MapManager {
     }
 
     private void removeObjects(ArrayList<GameObject> list) {
-        if (list == null)
+        if (list == null) {
             return;
+        }
 
-        for (GameObject object : list) {
-            if (object instanceof Fireball) {
-                map.removeFireball((Fireball) object);
-            } else if (object instanceof Enemy) {
-                map.removeEnemy((Enemy) object);
+        for (var object : list) {
+            if (object instanceof Fireball fireball) {
+                map.removeFireball(fireball);
+            } else if (object instanceof Enemy enemy) {
+                map.removeEnemy(enemy);
             } else if (object instanceof Coin || object instanceof BoostItem) {
                 map.removePrize((Prize) object);
             }

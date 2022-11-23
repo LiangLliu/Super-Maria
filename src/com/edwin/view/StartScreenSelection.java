@@ -12,13 +12,12 @@ public enum StartScreenSelection {
     }
 
     public StartScreenSelection getSelection(int number) {
-        if (number == 0)
-            return START_GAME;
-        else if (number == 1)
-            return VIEW_HELP;
-        else if (number == 2)
-            return VIEW_ABOUT;
-        else return null;
+        return switch (number) {
+            case 0 -> START_GAME;
+            case 1 -> VIEW_HELP;
+            case 2 -> VIEW_ABOUT;
+            default -> null;
+        };
     }
 
     public StartScreenSelection select(boolean toUp) {

@@ -1,13 +1,13 @@
 package com.edwin.model.enemy;
 
-import java.awt.*;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
-public class Goomba extends Enemy {
+public class Roomba extends Enemy {
 
     private BufferedImage rightImage;
 
-    public Goomba(double x, double y, BufferedImage style) {
+    public Roomba(double x, double y, BufferedImage style) {
         super(x, y, style);
         setVelX(3);
     }

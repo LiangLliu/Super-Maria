@@ -1,6 +1,7 @@
 package com.edwin.view;
 
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 
 public class MapSelectionItem {
@@ -14,7 +15,7 @@ public class MapSelectionItem {
         this.location = location;
         this.name = map;
 
-        ImageLoader loader = new ImageLoader();
+        var loader = new ImageLoader();
         this.image = loader.loadImage("/maps/" + map);
 
         this.dimension = new Dimension();

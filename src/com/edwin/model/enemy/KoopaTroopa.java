@@ -1,6 +1,6 @@
 package com.edwin.model.enemy;
 
-import java.awt.*;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 public class KoopaTroopa extends Enemy {

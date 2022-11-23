@@ -2,15 +2,24 @@ package com.edwin.manager;
 
 import com.edwin.model.EndFlag;
 import com.edwin.model.Map;
-import com.edwin.model.brick.*;
-import com.edwin.model.enemy.Goomba;
+import com.edwin.model.brick.Brick;
+import com.edwin.model.brick.GroundBrick;
+import com.edwin.model.brick.OrdinaryBrick;
+import com.edwin.model.brick.Pipe;
+import com.edwin.model.brick.SurpriseBrick;
+import com.edwin.model.enemy.Roomba;
 import com.edwin.model.enemy.KoopaTroopa;
 import com.edwin.model.hero.Mario;
-import com.edwin.model.prize.*;
+import com.edwin.model.prize.Coin;
+import com.edwin.model.prize.FireFlower;
+import com.edwin.model.prize.OneUpMushroom;
+import com.edwin.model.prize.Prize;
+import com.edwin.model.prize.SuperMushroom;
 import com.edwin.view.ImageLoader;
 
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.util.Random;
 
 class MapCreator {
 
@@ -24,7 +33,7 @@ class MapCreator {
     MapCreator(ImageLoader imageLoader) {
 
         this.imageLoader = imageLoader;
-        BufferedImage sprite = imageLoader.loadImage("/sprite.png");
+        var sprite = imageLoader.loadImage("/sprite.png");
 
         this.backgroundImage = imageLoader.loadImage("/background.png");
         this.superMushroom = imageLoader.getSubImage(sprite, 2, 5, 48, 48);
@@ -43,14 +52,14 @@ class MapCreator {
     }
 
     Map createMap(String mapPath, double timeLimit) {
-        BufferedImage mapImage = imageLoader.loadImage(mapPath);
+        var mapImage = imageLoader.loadImage(mapPath);
 
         if (mapImage == null) {
             System.out.println("Given path is invalid...");
             return null;
         }
 
-        Map createdMap = new Map(timeLimit, backgroundImage);
+        var createdMap = new Map(timeLimit, backgroundImage);
         String[] paths = mapPath.split("/");
         createdMap.setPath(paths[paths.length - 1]);
 
@@ -86,7 +95,7 @@ class MapCreator {
                     Brick brick = new GroundBrick(xLocation, yLocation, this.groundBrick);
                     createdMap.addGroundBrick(brick);
                 } else if (currentPixel == goomba) {
-                    Goomba enemy = new Goomba(xLocation, yLocation, this.goombaLeft);
+                    Roomba enemy = new Roomba(xLocation, yLocation, this.goombaLeft);
                     enemy.setRightImage(goombaRight);
                     createdMap.addEnemy(enemy);
                 } else if (currentPixel == koopa) {

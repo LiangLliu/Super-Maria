@@ -13,7 +13,7 @@ public class MarioForm {
     private boolean isSuper, isFire; //note: fire form has priority over super form
     private BufferedImage fireballStyle;
 
-    public MarioForm(Animation animation, boolean isSuper, boolean isFire){
+    public MarioForm(Animation animation, boolean isSuper, boolean isFire) {
         this.animation = animation;
         this.isSuper = isSuper;
         this.isFire = isFire;
@@ -23,25 +23,22 @@ public class MarioForm {
         fireballStyle = imageLoader.getSubImage(fireball, 3, 4, 24, 24);
     }
 
-    public BufferedImage getCurrentStyle(boolean toRight, boolean movingInX, boolean movingInY){
+    public BufferedImage getCurrentStyle(boolean toRight, boolean movingInX, boolean movingInY) {
 
         BufferedImage style;
 
-        if(movingInY && toRight){
+        if (movingInY && toRight) {
             style = animation.getRightFrames()[0];
-        }
-        else if(movingInY){
+        } else if (movingInY) {
             style = animation.getLeftFrames()[0];
-        }
-        else if(movingInX){
+        } else if (movingInX) {
             style = animation.animate(5, toRight);
-        }
-        else {
-            if(toRight){
+        } else {
+            if (toRight) {
                 style = animation.getRightFrames()[1];
-            }
-            else
+            } else {
                 style = animation.getLeftFrames()[1];
+            }
         }
 
         return style;
@@ -49,7 +46,7 @@ public class MarioForm {
 
     public MarioForm onTouchEnemy(ImageLoader imageLoader) {
         BufferedImage[] leftFrames = imageLoader.getLeftFrames(0);
-        BufferedImage[] rightFrames= imageLoader.getRightFrames(0);
+        BufferedImage[] rightFrames = imageLoader.getRightFrames(0);
 
         Animation newAnimation = new Animation(leftFrames, rightFrames);
 
@@ -57,7 +54,7 @@ public class MarioForm {
     }
 
     public Fireball fire(boolean toRight, double x, double y) {
-        if(isFire){
+        if (isFire) {
             return new Fireball(x, y + 48, fireballStyle, toRight);
         }
         return null;

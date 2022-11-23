@@ -5,8 +5,10 @@ import com.edwin.view.ImageLoader;
 import com.edwin.view.StartScreenSelection;
 import com.edwin.view.UIManager;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JFrame;
+import javax.swing.WindowConstants;
+import java.awt.Graphics2D;
+import java.awt.Point;
 
 public class GameEngine implements Runnable {
 
@@ -23,13 +25,13 @@ public class GameEngine implements Runnable {
     private StartScreenSelection startScreenSelection = StartScreenSelection.START_GAME;
     private int selectedMap = 0;
 
-    private GameEngine() {
+    public GameEngine() {
         init();
     }
 
     private void init() {
         imageLoader = new ImageLoader();
-        InputManager inputManager = new InputManager(this);
+        var inputManager = new InputManager(this);
         gameStatus = GameStatus.START_SCREEN;
         camera = new Camera();
         uiManager = new UIManager(this, WIDTH, HEIGHT);
@@ -58,43 +60,43 @@ public class GameEngine implements Runnable {
         thread.start();
     }
 
-    private void reset(){
+    private void reset() {
         resetCamera();
         setGameStatus(GameStatus.START_SCREEN);
     }
 
-    public void resetCamera(){
+    public void resetCamera() {
         camera = new Camera();
         soundManager.restartBackground();
     }
 
     public void selectMapViaMouse() {
-        String path = uiManager.selectMapViaMouse(uiManager.getMousePosition());
+        var path = uiManager.selectMapViaMouse(uiManager.getMousePosition());
         if (path != null) {
             createMap(path);
         }
     }
 
-    public void selectMapViaKeyboard(){
-        String path = uiManager.selectMapViaKeyboard(selectedMap);
+    public void selectMapViaKeyboard() {
+        var path = uiManager.selectMapViaKeyboard(selectedMap);
         if (path != null) {
             createMap(path);
         }
     }
 
-    public void changeSelectedMap(boolean up){
+    public void changeSelectedMap(boolean up) {
         selectedMap = uiManager.changeSelectedMap(selectedMap, up);
     }
 
     private void createMap(String path) {
         boolean loaded = mapManager.createMap(imageLoader, path);
-        if(loaded){
+        if (loaded) {
             setGameStatus(GameStatus.RUNNING);
             soundManager.restartBackground();
+        } else {
+            setGameStatus(GameStatus.START_SCREEN);
         }
 
-        else
-            setGameStatus(GameStatus.START_SCREEN);
     }
 
     @Override
@@ -118,7 +120,7 @@ public class GameEngine implements Runnable {
             }
             render();
 
-            if(gameStatus != GameStatus.RUNNING) {
+            if (gameStatus != GameStatus.RUNNING) {
                 timer = System.currentTimeMillis();
             }
 
@@ -143,15 +145,15 @@ public class GameEngine implements Runnable {
         }
 
         int missionPassed = passMission();
-        if(missionPassed > -1){
+        if (missionPassed > -1) {
             mapManager.acquirePoints(missionPassed);
             //setGameStatus(GameStatus.MISSION_PASSED);
-        } else if(mapManager.endLevel())
+        } else if (mapManager.endLevel())
             setGameStatus(GameStatus.MISSION_PASSED);
     }
 
     private void updateCamera() {
-        Mario mario = mapManager.getMario();
+        var mario = mapManager.getMario();
         double marioVelocityX = mario.getVelX();
         double shiftAmount = 0;
 
@@ -171,56 +173,62 @@ public class GameEngine implements Runnable {
     }
 
     public void receiveInput(ButtonAction input) {
+        switch (gameStatus) {
+            case START_SCREEN -> {
+                if (input == ButtonAction.SELECT && startScreenSelection == StartScreenSelection.START_GAME) {
+                    startGame();
+                } else if (input == ButtonAction.SELECT && startScreenSelection == StartScreenSelection.VIEW_ABOUT) {
+                    setGameStatus(GameStatus.ABOUT_SCREEN);
+                } else if (input == ButtonAction.SELECT && startScreenSelection == StartScreenSelection.VIEW_HELP) {
+                    setGameStatus(GameStatus.HELP_SCREEN);
+                } else if (input == ButtonAction.GO_UP) {
+                    selectOption(true);
+                } else if (input == ButtonAction.GO_DOWN) {
+                    selectOption(false);
+                }
+            }
 
-        if (gameStatus == GameStatus.START_SCREEN) {
-            if (input == ButtonAction.SELECT && startScreenSelection == StartScreenSelection.START_GAME) {
-                startGame();
-            } else if (input == ButtonAction.SELECT && startScreenSelection == StartScreenSelection.VIEW_ABOUT) {
-                setGameStatus(GameStatus.ABOUT_SCREEN);
-            } else if (input == ButtonAction.SELECT && startScreenSelection == StartScreenSelection.VIEW_HELP) {
-                setGameStatus(GameStatus.HELP_SCREEN);
-            } else if (input == ButtonAction.GO_UP) {
-                selectOption(true);
-            } else if (input == ButtonAction.GO_DOWN) {
-                selectOption(false);
+            case MAP_SELECTION -> {
+                if (input == ButtonAction.SELECT) {
+                    selectMapViaKeyboard();
+                } else if (input == ButtonAction.GO_UP) {
+                    changeSelectedMap(true);
+                } else if (input == ButtonAction.GO_DOWN) {
+                    changeSelectedMap(false);
+                }
+            }
+            case RUNNING -> {
+                Mario mario = mapManager.getMario();
+                if (input == ButtonAction.JUMP) {
+                    mario.jump(this);
+                } else if (input == ButtonAction.M_RIGHT) {
+                    mario.move(true, camera);
+                } else if (input == ButtonAction.M_LEFT) {
+                    mario.move(false, camera);
+                } else if (input == ButtonAction.ACTION_COMPLETED) {
+                    mario.setVelX(0);
+                } else if (input == ButtonAction.FIRE) {
+                    mapManager.fire(this);
+                } else if (input == ButtonAction.PAUSE_RESUME) {
+                    pauseGame();
+                }
+            }
+
+            case PAUSED -> {
+                if (input == ButtonAction.PAUSE_RESUME) {
+                    pauseGame();
+                }
+            }
+
+            case GAME_OVER, MISSION_PASSED -> {
+                if (input == ButtonAction.GO_TO_START_SCREEN) {
+                    reset();
+                }
             }
         }
-        else if(gameStatus == GameStatus.MAP_SELECTION){
-            if(input == ButtonAction.SELECT){
-                selectMapViaKeyboard();
-            }
-            else if(input == ButtonAction.GO_UP){
-                changeSelectedMap(true);
-            }
-            else if(input == ButtonAction.GO_DOWN){
-                changeSelectedMap(false);
-            }
-        } else if (gameStatus == GameStatus.RUNNING) {
-            Mario mario = mapManager.getMario();
-            if (input == ButtonAction.JUMP) {
-                mario.jump(this);
-            } else if (input == ButtonAction.M_RIGHT) {
-                mario.move(true, camera);
-            } else if (input == ButtonAction.M_LEFT) {
-                mario.move(false, camera);
-            } else if (input == ButtonAction.ACTION_COMPLETED) {
-                mario.setVelX(0);
-            } else if (input == ButtonAction.FIRE) {
-                mapManager.fire(this);
-            } else if (input == ButtonAction.PAUSE_RESUME) {
-                pauseGame();
-            }
-        } else if (gameStatus == GameStatus.PAUSED) {
-            if (input == ButtonAction.PAUSE_RESUME) {
-                pauseGame();
-            }
-        } else if(gameStatus == GameStatus.GAME_OVER && input == ButtonAction.GO_TO_START_SCREEN){
-            reset();
-        } else if(gameStatus == GameStatus.MISSION_PASSED && input == ButtonAction.GO_TO_START_SCREEN){
-            reset();
-        }
 
-        if(input == ButtonAction.GO_TO_START_SCREEN){
+
+        if (input == ButtonAction.GO_TO_START_SCREEN) {
             setGameStatus(GameStatus.START_SCREEN);
         }
     }
@@ -245,12 +253,12 @@ public class GameEngine implements Runnable {
         }
     }
 
-    public void shakeCamera(){
+    public void shakeCamera() {
         camera.shakeCamera();
     }
 
     private boolean isGameOver() {
-        if(gameStatus == GameStatus.RUNNING)
+        if (gameStatus == GameStatus.RUNNING)
             return mapManager.isGameOver();
         return false;
     }
@@ -292,10 +300,10 @@ public class GameEngine implements Runnable {
     }
 
     public Point getCameraLocation() {
-        return new Point((int)camera.getX(), (int)camera.getY());
+        return new Point((int) camera.getX(), (int) camera.getY());
     }
 
-    private int passMission(){
+    private int passMission() {
         return mapManager.passMission();
     }
 
@@ -335,9 +343,6 @@ public class GameEngine implements Runnable {
         return mapManager;
     }
 
-    public static void main(String... args) {
-        new GameEngine();
-    }
 
     public int getRemainingTime() {
         return mapManager.getRemainingTime();

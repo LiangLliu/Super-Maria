@@ -17,8 +17,8 @@ public class SoundManager {
 
     private AudioInputStream loadAudio(String url) {
         try {
-            InputStream audioSrc = getClass().getResourceAsStream("/com/edwin/media/audio/" + url + ".wav");
-            InputStream bufferedIn = new BufferedInputStream(audioSrc);
+            var audioSrc = getClass().getResourceAsStream("/com/edwin/assets/audio/" + url + ".wav");
+            var bufferedIn = new BufferedInputStream(audioSrc);
             return AudioSystem.getAudioInputStream(bufferedIn);
 
         } catch (Exception e) {
@@ -30,7 +30,7 @@ public class SoundManager {
 
     private Clip getClip(AudioInputStream stream) {
         try {
-            Clip clip = AudioSystem.getClip();
+            var clip = AudioSystem.getClip();
             clip.open(stream);
             return clip;
         } catch (Exception e) {
@@ -40,12 +40,12 @@ public class SoundManager {
         return null;
     }
 
-    public void resumeBackground(){
+    public void resumeBackground() {
         background.setMicrosecondPosition(clipTime);
         background.start();
     }
 
-    public void pauseBackground(){
+    public void pauseBackground() {
         clipTime = background.getMicrosecondPosition();
         background.stop();
     }
@@ -56,47 +56,47 @@ public class SoundManager {
     }
 
     public void playJump() {
-        Clip clip = getClip(loadAudio("jump"));
+        var clip = getClip(loadAudio("jump"));
         clip.start();
 
     }
 
     public void playCoin() {
-        Clip clip = getClip(loadAudio("coin"));
+        var clip = getClip(loadAudio("coin"));
         clip.start();
 
     }
 
     public void playFireball() {
-        Clip clip = getClip(loadAudio("fireball"));
+        var clip = getClip(loadAudio("fireball"));
         clip.start();
 
     }
 
     public void playGameOver() {
-        Clip clip = getClip(loadAudio("gameOver"));
+        var clip = getClip(loadAudio("gameOver"));
         clip.start();
     }
 
     public void playStomp() {
-        Clip clip = getClip(loadAudio("stomp"));
+        var clip = getClip(loadAudio("stomp"));
         clip.start();
     }
 
     public void playOneUp() {
-        Clip clip = getClip(loadAudio("oneUp"));
+        var clip = getClip(loadAudio("oneUp"));
         clip.start();
     }
 
     public void playSuperMushroom() {
 
-        Clip clip = getClip(loadAudio("superMushroom"));
+        var clip = getClip(loadAudio("superMushroom"));
         clip.start();
     }
 
     public void playMarioDies() {
 
-        Clip clip = getClip(loadAudio("marioDies"));
+        var clip = getClip(loadAudio("marioDies"));
         clip.start();
     }
 
