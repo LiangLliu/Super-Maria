@@ -1,7 +1,12 @@
-package com.edwin.manager;
+package com.edwin.engine;
 
+import com.edwin.core.Camera;
+import com.edwin.manager.ButtonAction;
+import com.edwin.manager.GameStatus;
+import com.edwin.manager.InputManager;
+import com.edwin.manager.MapManager;
+import com.edwin.manager.SoundManager;
 import com.edwin.model.hero.Mario;
-import com.edwin.view.ImageLoader;
 import com.edwin.view.StartScreenSelection;
 import com.edwin.view.UIManager;
 
@@ -20,7 +25,6 @@ public class GameEngine implements Runnable {
     private GameStatus gameStatus;
     private boolean isRunning;
     private Camera camera;
-    private ImageLoader imageLoader;
     private Thread thread;
     private StartScreenSelection startScreenSelection = StartScreenSelection.START_GAME;
     private int selectedMap = 0;
@@ -30,7 +34,6 @@ public class GameEngine implements Runnable {
     }
 
     private void init() {
-        imageLoader = new ImageLoader();
         var inputManager = new InputManager(this);
         gameStatus = GameStatus.START_SCREEN;
         camera = new Camera();
@@ -38,7 +41,7 @@ public class GameEngine implements Runnable {
         soundManager = new SoundManager();
         mapManager = new MapManager();
 
-        JFrame frame = new JFrame("Super Mario Bros.");
+        var frame = new JFrame("Super Mario Bros.");
         frame.add(uiManager);
         frame.addKeyListener(inputManager);
         frame.addMouseListener(inputManager);
@@ -89,7 +92,7 @@ public class GameEngine implements Runnable {
     }
 
     private void createMap(String path) {
-        boolean loaded = mapManager.createMap(imageLoader, path);
+        boolean loaded = mapManager.createMap(path);
         if (loaded) {
             setGameStatus(GameStatus.RUNNING);
             soundManager.restartBackground();
@@ -263,9 +266,6 @@ public class GameEngine implements Runnable {
         return false;
     }
 
-    public ImageLoader getImageLoader() {
-        return imageLoader;
-    }
 
     public GameStatus getGameStatus() {
         return gameStatus;

@@ -1,10 +1,10 @@
 package com.edwin.model.prize;
 
-import com.edwin.manager.GameEngine;
+import com.edwin.engine.GameEngine;
 import com.edwin.model.hero.Mario;
 import com.edwin.model.hero.MarioForm;
 import com.edwin.view.Animation;
-import com.edwin.view.ImageLoader;
+import com.edwin.loader.ImageLoader;
 
 import java.awt.image.BufferedImage;
 
@@ -19,7 +19,7 @@ public class FireFlower extends BoostItem {
     public void onTouch(Mario mario, GameEngine engine) {
         mario.acquirePoints(getPoint());
 
-        var imageLoader = new ImageLoader();
+        var imageLoader = ImageLoader.getSingleton();
 
         if(!mario.getMarioForm().isFire()){
             var leftFrames = imageLoader.getLeftFrames(MarioForm.FIRE);

@@ -1,7 +1,7 @@
 package com.edwin.model.hero;
 
 import com.edwin.view.Animation;
-import com.edwin.view.ImageLoader;
+import com.edwin.loader.ImageLoader;
 
 import java.awt.image.BufferedImage;
 
@@ -18,7 +18,7 @@ public class MarioForm {
         this.isSuper = isSuper;
         this.isFire = isFire;
 
-        ImageLoader imageLoader = new ImageLoader();
+        ImageLoader imageLoader = ImageLoader.getSingleton();
         BufferedImage fireball = imageLoader.loadImage("/sprite.png");
         fireballStyle = imageLoader.getSubImage(fireball, 3, 4, 24, 24);
     }
@@ -44,11 +44,14 @@ public class MarioForm {
         return style;
     }
 
-    public MarioForm onTouchEnemy(ImageLoader imageLoader) {
-        BufferedImage[] leftFrames = imageLoader.getLeftFrames(0);
-        BufferedImage[] rightFrames = imageLoader.getRightFrames(0);
+    public MarioForm onTouchEnemy() {
 
-        Animation newAnimation = new Animation(leftFrames, rightFrames);
+        var imageLoader = ImageLoader.getSingleton();
+
+        var leftFrames = imageLoader.getLeftFrames(0);
+        var rightFrames = imageLoader.getRightFrames(0);
+
+        var newAnimation = new Animation(leftFrames, rightFrames);
 
         return new MarioForm(newAnimation, false, false);
     }

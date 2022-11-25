@@ -1,4 +1,4 @@
-package com.edwin.view;
+package com.edwin.loader;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -7,26 +7,31 @@ import java.util.Objects;
 
 public class ImageLoader {
 
-    private BufferedImage marioForms;
-    private BufferedImage brickAnimation;
+    private final BufferedImage marioForms;
+    private final BufferedImage brickAnimation;
 
-    public ImageLoader() {
+    private ImageLoader() {
         marioForms = loadImage("/mario-forms.png");
         brickAnimation = loadImage("/brick-animation.png");
     }
 
-    public BufferedImage loadImage(String path) {
-        BufferedImage imageToReturn = null;
-
-        try {
-            imageToReturn = ImageIO.read(Objects.requireNonNull(getClass().getResource("/com/edwin/assets" + path)));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return imageToReturn;
+    private static class Inner {
+        private static final ImageLoader INSTANCE = new ImageLoader();
     }
 
+    public static ImageLoader getSingleton() {
+        return Inner.INSTANCE;
+    }
+
+    public BufferedImage loadImage(String path) {
+
+        try {
+            return ImageIO.read(Objects.requireNonNull(getClass().getResource("/com/edwin/assets" + path)));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     public BufferedImage getSubImage(BufferedImage image, int col, int row, int w, int h) {
         if ((col == 1 || col == 4) && row == 3) { //koopa
@@ -36,50 +41,36 @@ public class ImageLoader {
     }
 
     public BufferedImage[] getLeftFrames(int marioForm) {
-        var leftFrames = new BufferedImage[5];
-        int col = 1;
-        int width = 52, height = 48;
-
-        if (marioForm == 1) { //super mario
-            col = 4;
-            width = 48;
-            height = 96;
-        } else if (marioForm == 2) { //fire mario
-            col = 7;
-            width = 48;
-            height = 96;
-        }
-
-        for (int i = 0; i < 5; i++) {
-            leftFrames[i] = marioForms.getSubimage((col - 1) * width, (i) * height, width, height);
-        }
-        return leftFrames;
+        return getBufferedImages(1, marioForm, 4, 7);
     }
 
     public BufferedImage[] getRightFrames(int marioForm) {
-        var rightFrames = new BufferedImage[5];
-        int col = 2;
+        return getBufferedImages(2, marioForm, 5, 8);
+    }
+
+    private BufferedImage[] getBufferedImages(int col, int marioForm, int col1, int col2) {
+        var bufferedImages = new BufferedImage[5];
         int width = 52, height = 48;
 
         if (marioForm == 1) { //super mario
-            col = 5;
+            col = col1;
             width = 48;
             height = 96;
         } else if (marioForm == 2) { //fire mario
-            col = 8;
+            col = col2;
             width = 48;
             height = 96;
         }
 
-        for (int i = 0; i < 5; i++) {
-            rightFrames[i] = marioForms.getSubimage((col - 1) * width, (i) * height, width, height);
+        for (int i = 0; i < bufferedImages.length; i++) {
+            bufferedImages[i] = marioForms.getSubimage((col - 1) * width, (i) * height, width, height);
         }
-        return rightFrames;
+        return bufferedImages;
     }
 
     public BufferedImage[] getBrickFrames() {
         var frames = new BufferedImage[4];
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < frames.length; i++) {
             frames[i] = brickAnimation.getSubimage(i * 105, 0, 105, 105);
         }
         return frames;

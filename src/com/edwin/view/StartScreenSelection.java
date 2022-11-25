@@ -1,6 +1,8 @@
 package com.edwin.view;
 
-public enum StartScreenSelection {
+import com.edwin.core.IChangeSelector;
+
+public enum StartScreenSelection implements IChangeSelector {
     START_GAME(0),
     VIEW_HELP(1),
     VIEW_ABOUT(2);
@@ -21,21 +23,16 @@ public enum StartScreenSelection {
     }
 
     public StartScreenSelection select(boolean toUp) {
-        int selection;
-
-        if (lineNumber > -1 && lineNumber < 3) {
-            selection = lineNumber - (toUp ? 1 : -1);
-            if (selection == -1)
-                selection = 2;
-            else if (selection == 3)
-                selection = 0;
-            return getSelection(selection);
-        }
-
-        return null;
+        int index = changeSelect(lineNumber, toUp);
+        return getSelection(index);
     }
 
     public int getLineNumber() {
         return lineNumber;
+    }
+
+    @Override
+    public int getLength() {
+        return StartScreenSelection.values().length;
     }
 }

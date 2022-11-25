@@ -1,5 +1,7 @@
 package com.edwin.manager;
 
+import com.edwin.engine.GameEngine;
+
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -17,7 +19,7 @@ public class InputManager implements KeyListener, MouseListener {
 
     private GameEngine engine;
 
-    InputManager(GameEngine engine) {
+    public InputManager(GameEngine engine) {
         this.engine = engine;
     }
 

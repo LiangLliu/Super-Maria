@@ -1,19 +1,27 @@
 package com.edwin.view;
 
+import com.edwin.core.IChangeSelector;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.util.ArrayList;
 
-public class MapSelection {
+public class MapSelection implements IChangeSelector {
 
-    private ArrayList<String> maps = new ArrayList<>();
-    private MapSelectionItem[] mapSelectionItems;
+    private final ArrayList<String> maps = new ArrayList<>();
+    private final MapSelectionItem[] mapSelectionItems;
 
     public MapSelection() {
         getMaps();
         this.mapSelectionItems = createItems(this.maps);
+    }
+
+    private void getMaps() {
+        //TODO: read from file
+        maps.add("Map 1.png");
+        maps.add("Map 2.png");
     }
 
     public void draw(Graphics g) {
@@ -40,15 +48,10 @@ public class MapSelection {
         }
     }
 
-    private void getMaps() {
-        //TODO: read from file
-        maps.add("Map 1.png");
-        maps.add("Map 2.png");
-    }
-
     private MapSelectionItem[] createItems(ArrayList<String> maps) {
-        if (maps == null)
+        if (maps == null || maps.size() < 1) {
             return null;
+        }
 
         int defaultGridSize = 100;
         var items = new MapSelectionItem[maps.size()];
@@ -61,7 +64,7 @@ public class MapSelection {
     }
 
     public String selectMap(Point mouseLocation) {
-        for (MapSelectionItem item : mapSelectionItems) {
+        for (var item : mapSelectionItems) {
             var dimension = item.getDimension();
             var location = item.getLocation();
             boolean inX = location.x <= mouseLocation.x && location.x + dimension.width >= mouseLocation.x;
@@ -79,19 +82,8 @@ public class MapSelection {
         return null;
     }
 
-    public int changeSelectedMap(int index, boolean up) {
-        if (up) {
-            if (index <= 0)
-                return mapSelectionItems.length - 1;
-            else {
-                return index - 1;
-            }
-        } else {
-            if (index >= mapSelectionItems.length - 1)
-                return 0;
-            else {
-                return index + 1;
-            }
-        }
+    @Override
+    public int getLength() {
+        return mapSelectionItems.length;
     }
 }

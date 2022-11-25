@@ -1,9 +1,9 @@
 package com.edwin.model.brick;
 
-import com.edwin.manager.GameEngine;
+import com.edwin.engine.GameEngine;
 import com.edwin.model.prize.Prize;
 import com.edwin.view.Animation;
-import com.edwin.view.ImageLoader;
+import com.edwin.loader.ImageLoader;
 
 import java.awt.image.BufferedImage;
 
@@ -24,8 +24,7 @@ public class OrdinaryBrick extends Brick {
     }
 
     private void setAnimation() {
-        var imageLoader = new ImageLoader();
-        var leftFrames = imageLoader.getBrickFrames();
+        var leftFrames = ImageLoader.getSingleton().getBrickFrames();
 
         animation = new Animation(leftFrames, leftFrames);
     }

@@ -1,4 +1,4 @@
-package com.edwin.manager;
+package com.edwin.core;
 
 public class Camera {
 

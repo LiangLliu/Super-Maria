@@ -1,13 +1,12 @@
 package com.edwin.model.hero;
 
-import com.edwin.manager.Camera;
-import com.edwin.manager.GameEngine;
+import com.edwin.core.Camera;
+import com.edwin.engine.GameEngine;
 import com.edwin.view.Animation;
 import com.edwin.model.GameObject;
-import com.edwin.view.ImageLoader;
+import com.edwin.loader.ImageLoader;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
+import java.awt.Graphics;
 
 public class Mario extends GameObject{
 
@@ -27,7 +26,7 @@ public class Mario extends GameObject{
         coins = 0;
         invincibilityTimer = 0;
 
-        var imageLoader = new ImageLoader();
+        var imageLoader = ImageLoader.getSingleton();
         var leftFrames = imageLoader.getLeftFrames(MarioForm.SMALL);
         var rightFrames = imageLoader.getRightFrames(MarioForm.SMALL);
 
@@ -74,7 +73,7 @@ public class Mario extends GameObject{
         }
         else{
             engine.shakeCamera();
-            marioForm = marioForm.onTouchEnemy(engine.getImageLoader());
+            marioForm = marioForm.onTouchEnemy();
             setDimension(48, 48);
             return false;
         }

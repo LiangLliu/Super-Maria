@@ -17,13 +17,14 @@ public abstract class GameObject {
 
     private double gravityAcc;
 
-    private boolean falling, jumping;
+    private boolean falling;
+    private boolean jumping;
 
-    public GameObject(double x, double y, BufferedImage style){
+    public GameObject(double x, double y, BufferedImage style) {
         setLocation(x, y);
         setStyle(style);
 
-        if(style != null){
+        if (style != null) {
             setDimension(style.getWidth(), style.getHeight());
         }
 
@@ -35,10 +36,10 @@ public abstract class GameObject {
     }
 
     public void draw(Graphics g) {
-        BufferedImage style = getStyle();
+        var style = getStyle();
 
-        if(style != null){
-            g.drawImage(style, (int)x, (int)y, null);
+        if (style != null) {
+            g.drawImage(style, (int) x, (int) y, null);
         }
 
         //for debugging
@@ -52,16 +53,15 @@ public abstract class GameObject {
     }
 
     public void updateLocation() {
-        if(jumping && velY <= 0){
+        if (jumping && velY <= 0) {
             jumping = false;
             falling = true;
-        }
-        else if(jumping){
+        } else if (jumping) {
             velY = velY - gravityAcc;
             y = y - velY;
         }
 
-        if(falling){
+        if (falling) {
             y = y + velY;
             velY = velY + gravityAcc;
         }
@@ -90,7 +90,7 @@ public abstract class GameObject {
         this.y = y;
     }
 
-    public Dimension getDimension(){
+    public Dimension getDimension() {
         return dimension;
     }
 
@@ -98,7 +98,9 @@ public abstract class GameObject {
         this.dimension = dimension;
     }
 
-    public void setDimension(int width, int height){ this.dimension =  new Dimension(width, height); }
+    public void setDimension(int width, int height) {
+        this.dimension = new Dimension(width, height);
+    }
 
     public BufferedImage getStyle() {
         return style;
@@ -132,24 +134,24 @@ public abstract class GameObject {
         this.gravityAcc = gravityAcc;
     }
 
-    public Rectangle getTopBounds(){
-        return new Rectangle((int)x+dimension.width/6, (int)y, 2*dimension.width/3, dimension.height/2);
+    public Rectangle getTopBounds() {
+        return new Rectangle((int) x + dimension.width / 6, (int) y, 2 * dimension.width / 3, dimension.height / 2);
     }
 
-    public Rectangle getBottomBounds(){
-        return new Rectangle((int)x+dimension.width/6, (int)y + dimension.height/2, 2*dimension.width/3, dimension.height/2);
+    public Rectangle getBottomBounds() {
+        return new Rectangle((int) x + dimension.width / 6, (int) y + dimension.height / 2, 2 * dimension.width / 3, dimension.height / 2);
     }
 
-    public Rectangle getLeftBounds(){
-        return new Rectangle((int)x, (int)y + dimension.height/4, dimension.width/4, dimension.height/2);
+    public Rectangle getLeftBounds() {
+        return new Rectangle((int) x, (int) y + dimension.height / 4, dimension.width / 4, dimension.height / 2);
     }
 
-    public Rectangle getRightBounds(){
-        return new Rectangle((int)x + 3*dimension.width/4, (int)y + dimension.height/4, dimension.width/4, dimension.height/2);
+    public Rectangle getRightBounds() {
+        return new Rectangle((int) x + 3 * dimension.width / 4, (int) y + dimension.height / 4, dimension.width / 4, dimension.height / 2);
     }
 
-    public Rectangle getBounds(){
-        return new Rectangle((int)x, (int)y, dimension.width, dimension.height);
+    public Rectangle getBounds() {
+        return new Rectangle((int) x, (int) y, dimension.width, dimension.height);
     }
 
     public boolean isFalling() {

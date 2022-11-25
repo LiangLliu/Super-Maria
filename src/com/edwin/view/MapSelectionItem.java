@@ -2,11 +2,9 @@ package com.edwin.view;
 
 import java.awt.Dimension;
 import java.awt.Point;
-import java.awt.image.BufferedImage;
 
 public class MapSelectionItem {
 
-    private BufferedImage image;
     private String name;
     private Point location;
     private Dimension dimension;
@@ -14,9 +12,6 @@ public class MapSelectionItem {
     public MapSelectionItem(String map, Point location) {
         this.location = location;
         this.name = map;
-
-        var loader = new ImageLoader();
-        this.image = loader.loadImage("/maps/" + map);
 
         this.dimension = new Dimension();
     }

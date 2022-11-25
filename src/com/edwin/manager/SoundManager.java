@@ -4,7 +4,6 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import java.io.BufferedInputStream;
-import java.io.InputStream;
 
 public class SoundManager {
 
@@ -29,6 +28,7 @@ public class SoundManager {
     }
 
     private Clip getClip(AudioInputStream stream) {
+
         try {
             var clip = AudioSystem.getClip();
             clip.open(stream);
@@ -58,7 +58,6 @@ public class SoundManager {
     public void playJump() {
         var clip = getClip(loadAudio("jump"));
         clip.start();
-
     }
 
     public void playCoin() {

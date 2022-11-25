@@ -1,6 +1,7 @@
 package com.edwin.model.brick;
 
-import com.edwin.manager.GameEngine;
+import com.edwin.engine.GameEngine;
+import com.edwin.manager.Images;
 import com.edwin.model.prize.Prize;
 
 import java.awt.image.BufferedImage;
@@ -18,17 +19,15 @@ public class SurpriseBrick extends Brick{
 
     @Override
     public Prize reveal(GameEngine engine){
-        var newStyle = engine.getImageLoader().loadImage("/sprite.png");
-        newStyle = engine.getImageLoader().getSubImage(newStyle, 1, 2, 48, 48);
 
         if(prize != null){
             prize.reveal();
         }
 
         setEmpty(true);
-        setStyle(newStyle);
+        setStyle(Images.surpriseBrickStyle);
 
-        Prize toReturn = this.prize;
+        var toReturn = this.prize;
         this.prize = null;
         return toReturn;
     }

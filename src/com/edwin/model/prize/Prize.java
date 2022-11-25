@@ -1,6 +1,6 @@
 package com.edwin.model.prize;
 
-import com.edwin.manager.GameEngine;
+import com.edwin.engine.GameEngine;
 import com.edwin.model.hero.Mario;
 
 import java.awt.*;
