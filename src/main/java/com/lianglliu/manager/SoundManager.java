@@ -6,6 +6,8 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.util.Objects;
 
 public class SoundManager {
 
@@ -17,12 +19,13 @@ public class SoundManager {
     }
 
     private AudioInputStream loadAudio(String url) {
+        System.out.println("Loading " + url);
         try {
-            var filePath = ResourceLoader.getResourceFilePath("audio/" + url + ".wav");
-            assert filePath != null;
-            var audioSrc = getClass().getResourceAsStream(filePath);
-            assert audioSrc != null;
-            var bufferedIn = new BufferedInputStream(audioSrc);
+            String filePath = ResourceLoader.getResourceFilePath("audio/" + url + ".wav");
+
+            var targetStream = new FileInputStream(Objects.requireNonNull(filePath));
+
+            var bufferedIn = new BufferedInputStream(targetStream);
             return AudioSystem.getAudioInputStream(bufferedIn);
 
         } catch (Exception e) {
