@@ -1,6 +1,6 @@
 package com.lianglliu.manager;
 
-import java.awt.*;
+import java.awt.Color;
 
 public final class Colors {
 

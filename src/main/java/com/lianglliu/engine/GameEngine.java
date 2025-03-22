@@ -1,5 +1,6 @@
 package com.lianglliu.engine;
 
+import com.lianglliu.async.AsyncExecutor;
 import com.lianglliu.core.Camera;
 import com.lianglliu.manager.ButtonAction;
 import com.lianglliu.manager.GameStatus;
@@ -36,10 +37,16 @@ public class GameEngine implements Runnable {
     private void init() {
         var inputManager = new InputManager(this);
         gameStatus = GameStatus.START_SCREEN;
+
         camera = new Camera();
-        uiManager = new UIManager(this, WIDTH, HEIGHT);
-        soundManager = new SoundManager();
-        mapManager = new MapManager();
+
+        var uiManagerCompletableFuture = AsyncExecutor.supplyAsync(() -> new UIManager(this, WIDTH, HEIGHT));
+        var soundManagerCompletableFuture = AsyncExecutor.supplyAsync(SoundManager::new);
+        var mapManagerCompletableFuture = AsyncExecutor.supplyAsync(MapManager::new);
+
+        uiManager = AsyncExecutor.fetch(uiManagerCompletableFuture);
+        soundManager = AsyncExecutor.fetch(soundManagerCompletableFuture);
+        mapManager = AsyncExecutor.fetch(mapManagerCompletableFuture);
 
         var frame = new JFrame("Super Mario Bros.");
         frame.add(uiManager);

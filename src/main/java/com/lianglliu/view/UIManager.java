@@ -5,8 +5,13 @@ import com.lianglliu.loader.FontLoader;
 import com.lianglliu.manager.GameStatus;
 import com.lianglliu.manager.Images;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JPanel;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Point;
 
 public class UIManager extends JPanel {
 

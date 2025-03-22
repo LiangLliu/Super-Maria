@@ -1,13 +1,16 @@
 package com.lianglliu.manager;
 
+import com.lianglliu.async.AsyncExecutor;
 import com.lianglliu.loader.ResourceLoader;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.sound.sampled.DataLine;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.util.Objects;
+import java.util.Optional;
 
 public class SoundManager {
 
@@ -64,50 +67,63 @@ public class SoundManager {
     }
 
     public void playJump() {
-        var clip = getClip(loadAudio("jump"));
-        clip.start();
+        AsyncExecutor.runAsync(() -> {
+            Optional.ofNullable(getClip(loadAudio("jump")))
+                    .ifPresent(DataLine::start);
+        });
     }
 
     public void playCoin() {
-        var clip = getClip(loadAudio("coin"));
-        clip.start();
+
+        AsyncExecutor.runAsync(() -> {
+            Optional.ofNullable(getClip(loadAudio("coin")))
+                    .ifPresent(DataLine::start);
+        });
 
     }
 
     public void playFireball() {
-        var clip = getClip(loadAudio("fireball"));
-        clip.start();
-
+        AsyncExecutor.runAsync(() -> {
+            Optional.ofNullable(getClip(loadAudio("fireball")))
+                    .ifPresent(DataLine::start);
+        });
     }
 
     public void playGameOver() {
-        var clip = getClip(loadAudio("gameOver"));
-        clip.start();
+        AsyncExecutor.runAsync(() -> {
+            Optional.ofNullable(getClip(loadAudio("gameOver")))
+                    .ifPresent(DataLine::start);
+        });
     }
 
     public void playStomp() {
-        var clip = getClip(loadAudio("stomp"));
-        clip.start();
+        AsyncExecutor.runAsync(() -> {
+            Optional.ofNullable(getClip(loadAudio("stomp")))
+                    .ifPresent(DataLine::start);
+        });
     }
 
     public void playOneUp() {
-        var clip = getClip(loadAudio("oneUp"));
-        clip.start();
+        AsyncExecutor.runAsync(() -> {
+            Optional.ofNullable(getClip(loadAudio("oneUp")))
+                    .ifPresent(DataLine::start);
+        });
     }
 
     public void playSuperMushroom() {
-
-        var clip = getClip(loadAudio("superMushroom"));
-        clip.start();
+        AsyncExecutor.runAsync(() -> {
+            Optional.ofNullable(getClip(loadAudio("superMushroom")))
+                    .ifPresent(DataLine::start);
+        });
     }
 
     public void playMarioDies() {
-
-        var clip = getClip(loadAudio("marioDies"));
-        clip.start();
+        AsyncExecutor.runAsync(() -> {
+            Optional.ofNullable(getClip(loadAudio("marioDies")))
+                    .ifPresent(DataLine::start);
+        });
     }
 
     public void playFireFlower() {
-
     }
 }

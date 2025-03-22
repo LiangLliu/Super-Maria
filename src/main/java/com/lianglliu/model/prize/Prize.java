@@ -3,7 +3,7 @@ package com.lianglliu.model.prize;
 import com.lianglliu.engine.GameEngine;
 import com.lianglliu.model.hero.Mario;
 
-import java.awt.*;
+import java.awt.Rectangle;
 
 public interface Prize {
 

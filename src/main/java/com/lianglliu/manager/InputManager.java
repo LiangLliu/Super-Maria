@@ -7,13 +7,17 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
+import static java.awt.event.KeyEvent.VK_A;
+import static java.awt.event.KeyEvent.VK_D;
 import static java.awt.event.KeyEvent.VK_DOWN;
 import static java.awt.event.KeyEvent.VK_ENTER;
 import static java.awt.event.KeyEvent.VK_ESCAPE;
 import static java.awt.event.KeyEvent.VK_LEFT;
 import static java.awt.event.KeyEvent.VK_RIGHT;
+import static java.awt.event.KeyEvent.VK_S;
 import static java.awt.event.KeyEvent.VK_SPACE;
 import static java.awt.event.KeyEvent.VK_UP;
+import static java.awt.event.KeyEvent.VK_W;
 
 public class InputManager implements KeyListener, MouseListener {
 
@@ -29,21 +33,21 @@ public class InputManager implements KeyListener, MouseListener {
         var status = engine.getGameStatus();
 
         var currentAction = switch (keyCode) {
-            case VK_UP -> {
+            case VK_UP, VK_W -> {
                 if (status == GameStatus.START_SCREEN || status == GameStatus.MAP_SELECTION)
                     yield ButtonAction.GO_UP;
                 else
                     yield ButtonAction.JUMP;
             }
-            case VK_DOWN -> {
+            case VK_DOWN, VK_S -> {
                 if (status == GameStatus.START_SCREEN || status == GameStatus.MAP_SELECTION) {
                     yield ButtonAction.GO_DOWN;
                 }
                 yield ButtonAction.NO_ACTION;
             }
 
-            case VK_RIGHT -> ButtonAction.M_RIGHT;
-            case VK_LEFT -> ButtonAction.M_LEFT;
+            case VK_RIGHT, VK_D -> ButtonAction.M_RIGHT;
+            case VK_LEFT, VK_A -> ButtonAction.M_LEFT;
             case VK_ENTER -> ButtonAction.SELECT;
             case VK_ESCAPE -> (status == GameStatus.RUNNING || status == GameStatus.PAUSED)
                     ? ButtonAction.PAUSE_RESUME

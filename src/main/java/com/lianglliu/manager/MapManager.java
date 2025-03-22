@@ -88,8 +88,9 @@ public class MapManager {
             map.getEndPoint().setTouched(true);
             int height = (int) getMario().getY();
             return height * 2;
-        } else
+        } else {
             return -1;
+        }
     }
 
     public boolean endLevel() {
