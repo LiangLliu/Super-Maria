@@ -6,19 +6,54 @@ import com.lianglliu.loader.ResourceLoader;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
-import javax.sound.sampled.DataLine;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
+import java.util.AbstractMap;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class SoundManager {
 
-    private Clip background;
+    private final Clip background;
+    private final Map<SoundType, Clip> soundMaps;
     private long clipTime = 0;
+
+
+    private enum SoundType {
+        JUMP("jump"),
+        COIN("coin"),
+        FIREBALL("fireball"),
+        GAME_OVER("gameOver"),
+        STOMP("stomp"),
+        ONE_UP("oneUp"),
+        SUPER_MUSHROOM("superMushroom"),
+        MARIO_DIES("marioDies"),
+        ;
+        private final String sound;
+
+        SoundType(String sound) {
+            this.sound = sound;
+        }
+    }
+
 
     public SoundManager() {
         background = getClip(loadAudio("background"));
+
+        soundMaps = Arrays.stream(SoundType.values())
+                .map(soundType -> new AbstractMap.SimpleEntry<>(
+                        soundType,
+                        AsyncExecutor.supplyAsync(() -> getClip(loadAudio(soundType.sound)))
+                ))
+                .map(entry -> new AbstractMap.SimpleEntry<>(
+                        entry.getKey(),
+                        AsyncExecutor.fetch(entry.getValue())
+                ))
+                .filter(entry -> entry.getValue() != null)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private AudioInputStream loadAudio(String url) {
@@ -67,63 +102,47 @@ public class SoundManager {
     }
 
     public void playJump() {
-        AsyncExecutor.runAsync(() -> {
-            Optional.ofNullable(getClip(loadAudio("jump")))
-                    .ifPresent(DataLine::start);
-        });
+        playSound(SoundType.JUMP);
     }
 
     public void playCoin() {
-
-        AsyncExecutor.runAsync(() -> {
-            Optional.ofNullable(getClip(loadAudio("coin")))
-                    .ifPresent(DataLine::start);
-        });
-
+        playSound(SoundType.COIN);
     }
 
     public void playFireball() {
-        AsyncExecutor.runAsync(() -> {
-            Optional.ofNullable(getClip(loadAudio("fireball")))
-                    .ifPresent(DataLine::start);
-        });
+        playSound(SoundType.FIREBALL);
     }
 
     public void playGameOver() {
-        AsyncExecutor.runAsync(() -> {
-            Optional.ofNullable(getClip(loadAudio("gameOver")))
-                    .ifPresent(DataLine::start);
-        });
+        playSound(SoundType.GAME_OVER);
     }
 
     public void playStomp() {
-        AsyncExecutor.runAsync(() -> {
-            Optional.ofNullable(getClip(loadAudio("stomp")))
-                    .ifPresent(DataLine::start);
-        });
+        playSound(SoundType.STOMP);
     }
 
     public void playOneUp() {
-        AsyncExecutor.runAsync(() -> {
-            Optional.ofNullable(getClip(loadAudio("oneUp")))
-                    .ifPresent(DataLine::start);
-        });
+        playSound(SoundType.ONE_UP);
     }
 
     public void playSuperMushroom() {
-        AsyncExecutor.runAsync(() -> {
-            Optional.ofNullable(getClip(loadAudio("superMushroom")))
-                    .ifPresent(DataLine::start);
-        });
+        playSound(SoundType.SUPER_MUSHROOM);
     }
 
     public void playMarioDies() {
-        AsyncExecutor.runAsync(() -> {
-            Optional.ofNullable(getClip(loadAudio("marioDies")))
-                    .ifPresent(DataLine::start);
-        });
+        playSound(SoundType.MARIO_DIES);
     }
 
     public void playFireFlower() {
+    }
+
+    private void playSound(SoundType sound) {
+        AsyncExecutor.runAsync(() -> Optional.ofNullable(soundMaps.get(sound))
+                .ifPresent(clip -> {
+                    if (!clip.isActive()) {
+                        clip.setFramePosition(0);
+                        clip.start();
+                    }
+                }));
     }
 }
