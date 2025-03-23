@@ -26,14 +26,14 @@ public class MapManager {
     }
 
     public void updateLocations() {
-        if (map == null)
+        if (map == null) {
             return;
-
+        }
         map.updateLocations();
     }
 
     public void resetCurrentMap(GameEngine engine) {
-        var mario = getMario();
+        Mario mario = getMario();
         mario.resetLocation();
         engine.resetCamera();
         createMap(map.getPath());
@@ -46,7 +46,7 @@ public class MapManager {
     }
 
     public void acquirePoints(int point) {
-        map.getMario().acquirePoints(point);
+        getMario().acquirePoints(point);
     }
 
     public Mario getMario() {
@@ -55,12 +55,10 @@ public class MapManager {
 
     public void fire(GameEngine engine) {
         var fireball = getMario().fire();
-
-        Optional.ofNullable(fireball)
-                .ifPresent(it -> {
-                    map.addFireball(it);
-                    engine.playFireball();
-                });
+        Optional.ofNullable(fireball).ifPresent(it -> {
+            map.addFireball(it);
+            engine.playFireball();
+        });
     }
 
     public boolean isGameOver() {
@@ -88,10 +86,10 @@ public class MapManager {
             map.getEndPoint().setTouched(true);
             int height = (int) getMario().getY();
             return height * 2;
-        } else {
-            return -1;
         }
+        return -1;
     }
+
 
     public boolean endLevel() {
         return getMario().getX() >= map.getEndPoint().getX() + 320;
@@ -101,7 +99,6 @@ public class MapManager {
         if (map == null) {
             return;
         }
-
         checkBottomCollisions(engine);
         checkTopCollisions(engine);
         checkMarioHorizontalCollision(engine);
@@ -113,19 +110,17 @@ public class MapManager {
 
     private void checkBottomCollisions(GameEngine engine) {
         Mario mario = getMario();
-        ArrayList<Brick> bricks = map.getAllBricks();
-        ArrayList<Enemy> enemies = map.getEnemies();
-        ArrayList<GameObject> toBeRemoved = new ArrayList<>();
-
-        Rectangle marioBottomBounds = mario.getBottomBounds();
+        var bricks = map.getAllBricks();
+        var enemies = map.getEnemies();
+        var removalList = new ArrayList<GameObject>();
+        Rectangle marioBottom = mario.getBottomBounds();
 
         if (!mario.isJumping()) {
             mario.setFalling(true);
         }
 
         for (Brick brick : bricks) {
-            Rectangle brickTopBounds = brick.getTopBounds();
-            if (marioBottomBounds.intersects(brickTopBounds)) {
+            if (marioBottom.intersects(brick.getTopBounds())) {
                 mario.setY(brick.getY() - mario.getDimension().height + 1);
                 mario.setFalling(false);
                 mario.setVelY(0);
@@ -133,10 +128,9 @@ public class MapManager {
         }
 
         for (Enemy enemy : enemies) {
-            Rectangle enemyTopBounds = enemy.getTopBounds();
-            if (marioBottomBounds.intersects(enemyTopBounds)) {
+            if (marioBottom.intersects(enemy.getTopBounds())) {
                 mario.acquirePoints(100);
-                toBeRemoved.add(enemy);
+                removalList.add(enemy);
                 engine.playStomp();
             }
         }
@@ -147,57 +141,53 @@ public class MapManager {
             mario.setVelY(0);
         }
 
-        removeObjects(toBeRemoved);
+        removeObjects(removalList);
     }
 
     private void checkTopCollisions(GameEngine engine) {
-        var mario = getMario();
-        var bricks = map.getAllBricks();
-
-        var marioTopBounds = mario.getTopBounds();
-        for (var brick : bricks) {
-            var brickBottomBounds = brick.getBottomBounds();
-            if (marioTopBounds.intersects(brickBottomBounds)) {
+        Mario mario = getMario();
+        Rectangle marioTop = mario.getTopBounds();
+        for (Brick brick : map.getAllBricks()) {
+            if (marioTop.intersects(brick.getBottomBounds())) {
                 mario.setVelY(0);
                 mario.setY(brick.getY() + brick.getDimension().height);
                 var prize = brick.reveal(engine);
-                if (prize != null)
+                if (prize != null) {
                     map.addRevealedPrize(prize);
+                }
             }
         }
     }
 
     private void checkMarioHorizontalCollision(GameEngine engine) {
-        var mario = getMario();
+        Mario mario = getMario();
         var bricks = map.getAllBricks();
         var enemies = map.getEnemies();
-        var toBeRemoved = new ArrayList<GameObject>();
-
+        var removalList = new ArrayList<GameObject>();
         boolean marioDies = false;
-        boolean toRight = mario.getToRight();
 
-        var marioBounds = toRight ? mario.getRightBounds() : mario.getLeftBounds();
+        Rectangle marioHorBounds = mario.getToRight() ? mario.getRightBounds() : mario.getLeftBounds();
 
-        for (var brick : bricks) {
-            var brickBounds = !toRight ? brick.getRightBounds() : brick.getLeftBounds();
-            if (marioBounds.intersects(brickBounds)) {
+        for (Brick brick : bricks) {
+            Rectangle brickBounds = mario.getToRight() ? brick.getLeftBounds() : brick.getRightBounds();
+            if (marioHorBounds.intersects(brickBounds)) {
                 mario.setVelX(0);
-                if (toRight)
+                if (mario.getToRight()) {
                     mario.setX(brick.getX() - mario.getDimension().width);
-                else
+                } else {
                     mario.setX(brick.getX() + brick.getDimension().width);
+                }
             }
         }
 
-        for (var enemy : enemies) {
-            var enemyBounds = !toRight ? enemy.getRightBounds() : enemy.getLeftBounds();
-            if (marioBounds.intersects(enemyBounds)) {
+        for (Enemy enemy : enemies) {
+            Rectangle enemyBounds = mario.getToRight() ? enemy.getLeftBounds() : enemy.getRightBounds();
+            if (marioHorBounds.intersects(enemyBounds)) {
                 marioDies = mario.onTouchEnemy(engine);
-                toBeRemoved.add(enemy);
+                removalList.add(enemy);
             }
         }
-        removeObjects(toBeRemoved);
-
+        removeObjects(removalList);
 
         if (mario.getX() <= engine.getCameraLocation().getX() && mario.getVelX() < 0) {
             mario.setVelX(0);
@@ -213,26 +203,18 @@ public class MapManager {
         var bricks = map.getAllBricks();
         var enemies = map.getEnemies();
 
-        for (var enemy : enemies) {
+        for (Enemy enemy : enemies) {
             boolean standsOnBrick = false;
 
-            for (var brick : bricks) {
-                var enemyBounds = enemy.getLeftBounds();
-                var brickBounds = brick.getRightBounds();
-
-                var enemyBottomBounds = enemy.getBottomBounds();
-                var brickTopBounds = brick.getTopBounds();
-
-                if (enemy.getVelX() > 0) {
-                    enemyBounds = enemy.getRightBounds();
-                    brickBounds = brick.getLeftBounds();
-                }
-
-                if (enemyBounds.intersects(brickBounds)) {
+            for (Brick brick : bricks) {
+                Rectangle enemyHor = enemy.getVelX() > 0 ? enemy.getRightBounds() : enemy.getLeftBounds();
+                Rectangle brickHor = enemy.getVelX() > 0 ? brick.getLeftBounds() : brick.getRightBounds();
+                if (enemyHor.intersects(brickHor)) {
                     enemy.setVelX(-enemy.getVelX());
                 }
 
-                if (enemyBottomBounds.intersects(brickTopBounds)) {
+
+                if (enemy.getBottomBounds().intersects(brick.getTopBounds())) {
                     enemy.setFalling(false);
                     enemy.setVelY(0);
                     enemy.setY(brick.getY() - enemy.getDimension().height);
@@ -245,7 +227,6 @@ public class MapManager {
                 enemy.setVelY(0);
                 enemy.setY(map.getBottomBorder() - enemy.getDimension().height);
             }
-
             if (!standsOnBrick && enemy.getY() < map.getBottomBorder()) {
                 enemy.setFalling(true);
             }
@@ -258,106 +239,94 @@ public class MapManager {
 
         for (var prize : prizes) {
             if (prize instanceof BoostItem boostItem) {
-                var prizeBottomBounds = boostItem.getBottomBounds();
-                var prizeRightBounds = boostItem.getRightBounds();
-                var prizeLeftBounds = boostItem.getLeftBounds();
+
                 boostItem.setFalling(true);
-
-                for (var brick : bricks) {
-                    Rectangle brickBounds;
-
-                    if (boostItem.isFalling()) {
-                        brickBounds = brick.getTopBounds();
-
-                        if (brickBounds.intersects(prizeBottomBounds)) {
-                            boostItem.setFalling(false);
-                            boostItem.setVelY(0);
-                            boostItem.setY(brick.getY() - boostItem.getDimension().height + 1);
-                            if (boostItem.getVelX() == 0)
-                                boostItem.setVelX(2);
-                        }
-                    }
-
-                    if (boostItem.getVelX() > 0) {
-                        brickBounds = brick.getLeftBounds();
-
-                        if (brickBounds.intersects(prizeRightBounds)) {
-                            boostItem.setVelX(-boostItem.getVelX());
-                        }
-                    } else if (boostItem.getVelX() < 0) {
-                        brickBounds = brick.getRightBounds();
-
-                        if (brickBounds.intersects(prizeLeftBounds)) {
-                            boostItem.setVelX(-boostItem.getVelX());
-                        }
-                    }
-                }
+                handleBoostItemBrickCollision(boostItem, bricks);
 
                 if (boostItem.getY() + boostItem.getDimension().height > map.getBottomBorder()) {
                     boostItem.setFalling(false);
                     boostItem.setVelY(0);
                     boostItem.setY(map.getBottomBorder() - boostItem.getDimension().height);
-                    if (boostItem.getVelX() == 0)
+                    if (boostItem.getVelX() == 0) {
                         boostItem.setVelX(2);
+                    }
                 }
+            }
+        }
+    }
 
+    private void handleBoostItemBrickCollision(BoostItem boostItem, ArrayList<Brick> bricks) {
+        Rectangle prizeBottom = boostItem.getBottomBounds();
+        Rectangle prizeRight = boostItem.getRightBounds();
+        Rectangle prizeLeft = boostItem.getLeftBounds();
+
+        for (Brick brick : bricks) {
+
+            if (boostItem.isFalling() && prizeBottom.intersects(brick.getTopBounds())) {
+                boostItem.setFalling(false);
+                boostItem.setVelY(0);
+                boostItem.setY(brick.getY() - boostItem.getDimension().height + 1);
+                if (boostItem.getVelX() == 0) {
+                    boostItem.setVelX(2);
+                }
+            }
+
+            if (boostItem.getVelX() > 0 && prizeRight.intersects(brick.getLeftBounds())) {
+                boostItem.setVelX(-boostItem.getVelX());
+            } else if (boostItem.getVelX() < 0 && prizeLeft.intersects(brick.getRightBounds())) {
+                boostItem.setVelX(-boostItem.getVelX());
             }
         }
     }
 
     private void checkPrizeContact(GameEngine engine) {
         var prizes = map.getRevealedPrizes();
-        var toBeRemoved = new ArrayList<GameObject>();
+        var removalList = new ArrayList<GameObject>();
+        Rectangle marioBounds = getMario().getBounds();
 
-        var marioBounds = getMario().getBounds();
         for (var prize : prizes) {
-            var prizeBounds = prize.getBounds();
+            Rectangle prizeBounds = prize.getBounds();
             if (prizeBounds.intersects(marioBounds)) {
                 prize.onTouch(getMario(), engine);
-                toBeRemoved.add((GameObject) prize);
+                removalList.add((GameObject) prize);
             } else if (prize instanceof Coin coin) {
                 coin.onTouch(getMario(), engine);
             }
         }
-
-        removeObjects(toBeRemoved);
+        removeObjects(removalList);
     }
 
     private void checkFireballContact() {
         var fireballs = map.getFireballs();
         var enemies = map.getEnemies();
         var bricks = map.getAllBricks();
-        var toBeRemoved = new ArrayList<GameObject>();
+        var removalList = new ArrayList<GameObject>();
 
         for (var fireball : fireballs) {
-            var fireballBounds = fireball.getBounds();
+            Rectangle fireballBounds = fireball.getBounds();
 
             for (var enemy : enemies) {
-                var enemyBounds = enemy.getBounds();
-                if (fireballBounds.intersects(enemyBounds)) {
+                if (fireballBounds.intersects(enemy.getBounds())) {
                     acquirePoints(100);
-                    toBeRemoved.add(enemy);
-                    toBeRemoved.add(fireball);
+                    removalList.add(enemy);
+                    removalList.add(fireball);
                 }
             }
 
             for (var brick : bricks) {
-                var brickBounds = brick.getBounds();
-                if (fireballBounds.intersects(brickBounds)) {
-                    toBeRemoved.add(fireball);
+                if (fireballBounds.intersects(brick.getBounds())) {
+                    removalList.add(fireball);
                 }
             }
         }
-
-        removeObjects(toBeRemoved);
+        removeObjects(removalList);
     }
 
-    private void removeObjects(ArrayList<GameObject> list) {
-        if (list == null) {
+    private void removeObjects(ArrayList<GameObject> removalList) {
+        if (removalList == null || removalList.isEmpty()) {
             return;
         }
-
-        for (var object : list) {
+        for (var object : removalList) {
             if (object instanceof Fireball fireball) {
                 map.removeFireball(fireball);
             } else if (object instanceof Enemy enemy) {

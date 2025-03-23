@@ -14,7 +14,7 @@ public class ResourceLoader {
     public static String getResourceFilePath(String fileName) {
         var resource = ResourceLoader.getResourceURL(fileName);
         if (resource == null) {
-            return null; // 或者抛出异常，例如 IllegalArgumentException
+            return null;
         }
         return Paths.get(resource.getPath()).toString();
     }

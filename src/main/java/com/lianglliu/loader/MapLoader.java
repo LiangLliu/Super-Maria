@@ -19,6 +19,8 @@ import com.lianglliu.model.prize.SuperMushroom;
 
 public class MapLoader {
 
+    private static final int PIXEL_MULTIPLIER = 48;
+
     public Map createMap(String mapPath, double timeLimit) {
         var mapImage = ImageLoader.getSingleton().loadImage(mapPath);
 
@@ -31,43 +33,13 @@ public class MapLoader {
         String[] paths = mapPath.split("/");
         createdMap.setPath(paths[paths.length - 1]);
 
-        int pixelMultiplier = 48;
-
         for (int x = 0; x < mapImage.getWidth(); x++) {
             for (int y = 0; y < mapImage.getHeight(); y++) {
-
                 int currentPixel = mapImage.getRGB(x, y);
-                int xLocation = x * pixelMultiplier;
-                int yLocation = y * pixelMultiplier;
+                int xLocation = x * PIXEL_MULTIPLIER;
+                int yLocation = y * PIXEL_MULTIPLIER;
 
-                if (currentPixel == Colors.ordinaryBrick) {
-                    var brick = new OrdinaryBrick(xLocation, yLocation, Images.ordinaryBrick);
-                    createdMap.addBrick(brick);
-                } else if (currentPixel == Colors.surpriseBrick) {
-                    var prize = generateRandomPrize(xLocation, yLocation);
-                    var brick = new SurpriseBrick(xLocation, yLocation, Images.surpriseBrick, prize);
-                    createdMap.addBrick(brick);
-                } else if (currentPixel == Colors.pipe) {
-                    var brick = new Pipe(xLocation, yLocation, Images.pipe);
-                    createdMap.addGroundBrick(brick);
-                } else if (currentPixel == Colors.groundBrick) {
-                    var brick = new GroundBrick(xLocation, yLocation, Images.groundBrick);
-                    createdMap.addGroundBrick(brick);
-                } else if (currentPixel == Colors.goomba) {
-                    var enemy = new Roomba(xLocation, yLocation, Images.goombaLeft);
-                    enemy.setRightImage(Images.goombaRight);
-                    createdMap.addEnemy(enemy);
-                } else if (currentPixel == Colors.koopa) {
-                    var enemy = new KoopaTroopa(xLocation, yLocation, Images.koopaLeft);
-                    enemy.setRightImage(Images.koopaRight);
-                    createdMap.addEnemy(enemy);
-                } else if (currentPixel == Colors.mario) {
-                    var marioObject = new Mario(xLocation, yLocation);
-                    createdMap.setMario(marioObject);
-                } else if (currentPixel == Colors.end) {
-                    var endPoint = new EndFlag(xLocation + 24, yLocation, Images.endFlag);
-                    createdMap.setEndPoint(endPoint);
-                }
+                processPixel(currentPixel, xLocation, yLocation, createdMap);
             }
         }
 
@@ -75,15 +47,42 @@ public class MapLoader {
         return createdMap;
     }
 
+    private void processPixel(int pixel, int x, int y, Map map) {
+        if (pixel == Colors.ordinaryBrick) {
+            map.addBrick(new OrdinaryBrick(x, y, Images.ordinaryBrick));
+        } else if (pixel == Colors.surpriseBrick) {
+            Prize prize = generateRandomPrize(x, y);
+            map.addBrick(new SurpriseBrick(x, y, Images.surpriseBrick, prize));
+        } else if (pixel == Colors.pipe) {
+            map.addGroundBrick(new Pipe(x, y, Images.pipe));
+        } else if (pixel == Colors.groundBrick) {
+            map.addGroundBrick(new GroundBrick(x, y, Images.groundBrick));
+        } else if (pixel == Colors.goomba) {
+            var enemy = new Roomba(x, y, Images.goombaLeft);
+            enemy.setRightImage(Images.goombaRight);
+            map.addEnemy(enemy);
+        } else if (pixel == Colors.koopa) {
+            var enemy = new KoopaTroopa(x, y, Images.koopaLeft);
+            enemy.setRightImage(Images.koopaRight);
+            map.addEnemy(enemy);
+        } else if (pixel == Colors.mario) {
+            map.setMario(new Mario(x, y));
+        } else if (pixel == Colors.end) {
+            map.setEndPoint(new EndFlag(x + 24, y, Images.endFlag));
+        }
+    }
+
     private Prize generateRandomPrize(double x, double y) {
         int random = (int) (Math.random() * 12);
-
-        return switch (random) {
-            case 0 -> new SuperMushroom(x, y, Images.superMushroom);
-            case 1 -> new FireFlower(x, y, Images.fireFlower);
-            case 2 -> new OneUpMushroom(x, y, Images.oneUpMushroom);
-            default -> new Coin(x, y, Images.coin, 50);
-        };
+        if (random == 0) {
+            return new SuperMushroom(x, y, Images.superMushroom);
+        } else if (random == 1) {
+            return new FireFlower(x, y, Images.fireFlower);
+        } else if (random == 2) {
+            return new OneUpMushroom(x, y, Images.oneUpMushroom);
+        } else {
+            return new Coin(x, y, Images.coin, 50);
+        }
     }
 
     private MapLoader() {
@@ -94,6 +93,6 @@ public class MapLoader {
     }
 
     public static MapLoader getSingleton() {
-        return MapLoader.Inner.INSTANCE;
+        return Inner.INSTANCE;
     }
 }
