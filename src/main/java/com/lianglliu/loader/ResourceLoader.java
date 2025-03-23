@@ -1,5 +1,6 @@
 package com.lianglliu.loader;
 
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Paths;
 
@@ -17,5 +18,8 @@ public class ResourceLoader {
             return null;
         }
         return Paths.get(resource.getPath()).toString();
+    }
+    public static InputStream getResource(String resource) {
+        return ResourceLoader.class.getClassLoader().getResourceAsStream(resource);
     }
 }
