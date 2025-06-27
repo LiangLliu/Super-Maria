@@ -1,24 +1,23 @@
 package com.lianglliu.engine;
 
+import java.awt.Graphics2D;
+import java.awt.Point;
+
+import javax.swing.JFrame;
+import javax.swing.WindowConstants;
+
 import com.lianglliu.async.AsyncExecutor;
+import com.lianglliu.config.GameConfig;
 import com.lianglliu.core.Camera;
 import com.lianglliu.manager.ButtonAction;
 import com.lianglliu.manager.GameStatus;
 import com.lianglliu.manager.InputManager;
 import com.lianglliu.manager.MapManager;
 import com.lianglliu.manager.SoundManager;
-import com.lianglliu.model.hero.Mario;
 import com.lianglliu.view.StartScreenSelection;
 import com.lianglliu.view.UIManager;
 
-import javax.swing.JFrame;
-import javax.swing.WindowConstants;
-import java.awt.Graphics2D;
-import java.awt.Point;
-
 public class GameEngine implements Runnable {
-
-    private final static int WIDTH = 1268, HEIGHT = 708;
 
     private MapManager mapManager;
     private UIManager uiManager;
@@ -29,6 +28,7 @@ public class GameEngine implements Runnable {
     private Thread thread;
     private StartScreenSelection startScreenSelection = StartScreenSelection.START_GAME;
     private int selectedMap = 0;
+    private InputHandler inputHandler;
 
     public GameEngine() {
         init();
@@ -36,11 +36,12 @@ public class GameEngine implements Runnable {
 
     private void init() {
         var inputManager = new InputManager(this);
+        inputHandler = new InputHandler(this);
         gameStatus = GameStatus.START_SCREEN;
 
         camera = new Camera();
 
-        var uiManagerCompletableFuture = AsyncExecutor.supplyAsync(() -> new UIManager(this, WIDTH, HEIGHT));
+        var uiManagerCompletableFuture = AsyncExecutor.supplyAsync(() -> new UIManager(this, GameConfig.GAME_WIDTH, GameConfig.GAME_HEIGHT));
         var soundManagerCompletableFuture = AsyncExecutor.supplyAsync(SoundManager::new);
         var mapManagerCompletableFuture = AsyncExecutor.supplyAsync(MapManager::new);
 
@@ -70,7 +71,7 @@ public class GameEngine implements Runnable {
         thread.start();
     }
 
-    private void reset() {
+    public void reset() {
         resetCamera();
         setGameStatus(GameStatus.START_SCREEN);
     }
@@ -112,8 +113,7 @@ public class GameEngine implements Runnable {
     @Override
     public void run() {
         long lastTime = System.nanoTime();
-        double amountOfTicks = 60.0;
-        double ns = 1000000000 / amountOfTicks;
+        double ns = GameConfig.NANOSECONDS_PER_SECOND / GameConfig.TARGET_FPS;
         double delta = 0;
         long timer = System.currentTimeMillis();
 
@@ -134,8 +134,8 @@ public class GameEngine implements Runnable {
                 timer = System.currentTimeMillis();
             }
 
-            if (System.currentTimeMillis() - timer > 1000) {
-                timer += 1000;
+            if (System.currentTimeMillis() - timer > GameConfig.TIMER_UPDATE_INTERVAL_MS) {
+                timer += GameConfig.TIMER_UPDATE_INTERVAL_MS;
                 mapManager.updateTime();
             }
         }
@@ -167,7 +167,7 @@ public class GameEngine implements Runnable {
         double marioVelocityX = mario.getVelX();
         double shiftAmount = 0;
 
-        if (marioVelocityX > 0 && mario.getX() - 600 > camera.getX()) {
+        if (marioVelocityX > 0 && mario.getX() - GameConfig.CAMERA_FOLLOW_OFFSET > camera.getX()) {
             shiftAmount = marioVelocityX;
         }
 
@@ -183,77 +183,20 @@ public class GameEngine implements Runnable {
     }
 
     public void receiveInput(ButtonAction input) {
-        switch (gameStatus) {
-            case START_SCREEN -> {
-                if (input == ButtonAction.SELECT && startScreenSelection == StartScreenSelection.START_GAME) {
-                    startGame();
-                } else if (input == ButtonAction.SELECT && startScreenSelection == StartScreenSelection.VIEW_ABOUT) {
-                    setGameStatus(GameStatus.ABOUT_SCREEN);
-                } else if (input == ButtonAction.SELECT && startScreenSelection == StartScreenSelection.VIEW_HELP) {
-                    setGameStatus(GameStatus.HELP_SCREEN);
-                } else if (input == ButtonAction.GO_UP) {
-                    selectOption(true);
-                } else if (input == ButtonAction.GO_DOWN) {
-                    selectOption(false);
-                }
-            }
-
-            case MAP_SELECTION -> {
-                if (input == ButtonAction.SELECT) {
-                    selectMapViaKeyboard();
-                } else if (input == ButtonAction.GO_UP) {
-                    changeSelectedMap(true);
-                } else if (input == ButtonAction.GO_DOWN) {
-                    changeSelectedMap(false);
-                }
-            }
-            case RUNNING -> {
-                Mario mario = mapManager.getMario();
-                if (input == ButtonAction.JUMP) {
-                    mario.jump(this);
-                } else if (input == ButtonAction.M_RIGHT) {
-                    mario.move(true, camera);
-                } else if (input == ButtonAction.M_LEFT) {
-                    mario.move(false, camera);
-                } else if (input == ButtonAction.ACTION_COMPLETED) {
-                    mario.setVelX(0);
-                } else if (input == ButtonAction.FIRE) {
-                    mapManager.fire(this);
-                } else if (input == ButtonAction.PAUSE_RESUME) {
-                    pauseGame();
-                }
-            }
-
-            case PAUSED -> {
-                if (input == ButtonAction.PAUSE_RESUME) {
-                    pauseGame();
-                }
-            }
-
-            case GAME_OVER, MISSION_PASSED -> {
-                if (input == ButtonAction.GO_TO_START_SCREEN) {
-                    reset();
-                }
-            }
-        }
-
-
-        if (input == ButtonAction.GO_TO_START_SCREEN) {
-            setGameStatus(GameStatus.START_SCREEN);
-        }
+        inputHandler.handleInput(input);
     }
 
-    private void selectOption(boolean selectUp) {
+    public void selectOption(boolean selectUp) {
         startScreenSelection = startScreenSelection.select(selectUp);
     }
 
-    private void startGame() {
+    public void startGame() {
         if (gameStatus != GameStatus.GAME_OVER) {
             setGameStatus(GameStatus.MAP_SELECTION);
         }
     }
 
-    private void pauseGame() {
+    public void pauseGame() {
         if (gameStatus == GameStatus.RUNNING) {
             setGameStatus(GameStatus.PAUSED);
             soundManager.pauseBackground();
@@ -308,6 +251,10 @@ public class GameEngine implements Runnable {
 
     public Point getCameraLocation() {
         return new Point((int) camera.getX(), (int) camera.getY());
+    }
+
+    public Camera getCamera() {
+        return camera;
     }
 
     private int passMission() {

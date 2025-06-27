@@ -1,12 +1,13 @@
 package com.lianglliu.model.hero;
 
+import java.awt.Graphics;
+
+import com.lianglliu.config.GameConfig;
 import com.lianglliu.core.Camera;
 import com.lianglliu.engine.GameEngine;
-import com.lianglliu.view.Animation;
-import com.lianglliu.model.GameObject;
 import com.lianglliu.loader.ImageLoader;
-
-import java.awt.Graphics;
+import com.lianglliu.model.GameObject;
+import com.lianglliu.view.Animation;
 
 public class Mario extends GameObject{
 
@@ -19,9 +20,9 @@ public class Mario extends GameObject{
 
     public Mario(double x, double y){
         super(x, y, null);
-        setDimension(48,48);
+        setDimension(GameConfig.MARIO_SIZE, GameConfig.MARIO_SIZE);
 
-        remainingLives = 3;
+        remainingLives = GameConfig.MARIO_DEFAULT_LIVES;
         points = 0;
         coins = 0;
         invincibilityTimer = 0;
@@ -48,17 +49,17 @@ public class Mario extends GameObject{
     public void jump(GameEngine engine) {
         if(!isJumping() && !isFalling()){
             setJumping(true);
-            setVelY(10);
+            setVelY(GameConfig.MARIO_JUMP_VELOCITY);
             engine.playJump();
         }
     }
 
     public void move(boolean toRight, Camera camera) {
         if(toRight){
-            setVelX(5);
+            setVelX(GameConfig.MARIO_MOVE_SPEED);
         }
         else if(camera.getX() < getX()){
-            setVelX(-5);
+            setVelX(-GameConfig.MARIO_MOVE_SPEED);
         }
 
         this.toRight = toRight;
@@ -74,7 +75,7 @@ public class Mario extends GameObject{
         else{
             engine.shakeCamera();
             marioForm = marioForm.onTouchEnemy();
-            setDimension(48, 48);
+            setDimension(GameConfig.MARIO_SIZE, GameConfig.MARIO_SIZE);
             return false;
         }
     }
