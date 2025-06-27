@@ -8,6 +8,10 @@ java {
     }
 }
 
+application {
+    mainClass = 'com.lianglliu.Main'
+}
+
 group = 'org.lianglliu'
 version = '1.0-SNAPSHOT'
 
