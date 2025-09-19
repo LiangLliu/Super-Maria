@@ -4,6 +4,12 @@
 
 * Classic Super Mario Bros. game implemented with Java.
 
+## Run
+
+```shell
+./gradlew run --quiet
+```
+
 ## About game
 
 You can visit [wikipedia page](https://en.wikipedia.org/wiki/Super_Mario_Bros.) or [Super Mario wiki page](https://www.mariowiki.com/Super_Mario_Bros.) for detailed information about the game.

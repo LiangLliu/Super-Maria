@@ -14,7 +14,6 @@ public class Mario extends GameObject{
     private int remainingLives;
     private int coins;
     private int points;
-    private double invincibilityTimer;
     private MarioForm marioForm;
     private boolean toRight = true;
 
@@ -25,7 +24,6 @@ public class Mario extends GameObject{
         remainingLives = GameConfig.MARIO_DEFAULT_LIVES;
         points = 0;
         coins = 0;
-        invincibilityTimer = 0;
 
         var imageLoader = ImageLoader.getSingleton();
         var leftFrames = imageLoader.getLeftFrames(MarioForm.SMALL);
