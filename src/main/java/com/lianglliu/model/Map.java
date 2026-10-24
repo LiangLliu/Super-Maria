@@ -12,17 +12,26 @@ import com.lianglliu.model.prize.Prize;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Map {
 
-    private double remainingTime;
-    private final BufferedImage backgroundImage;
-    private final int worldWidth;
     private final ArrayList<Brick> bricks = new ArrayList<>();
     private final ArrayList<Enemy> enemies = new ArrayList<>();
     private final ArrayList<Prize> revealedPrizes = new ArrayList<>();
     private final ArrayList<OrdinaryBrick> revealedBricks = new ArrayList<>();
     private final ArrayList<Fireball> fireballs = new ArrayList<>();
+
+    private final List<Brick> bricksView = Collections.unmodifiableList(bricks);
+    private final List<Enemy> enemiesView = Collections.unmodifiableList(enemies);
+    private final List<Prize> prizesView = Collections.unmodifiableList(revealedPrizes);
+    private final List<Fireball> fireballsView = Collections.unmodifiableList(fireballs);
+
+    private final BufferedImage backgroundImage;
+    private final int worldWidth;
+
+    private double remainingTime;
     private Mario mario;
     private EndFlag endPoint;
     private double bottomBorder;
@@ -43,23 +52,21 @@ public class Map {
         this.mario = mario;
     }
 
-    public ArrayList<Enemy> getEnemies() {
-        return enemies;
+    public List<Enemy> getEnemies() {
+        return enemiesView;
     }
 
-    public ArrayList<Fireball> getFireballs() {
-        return fireballs;
+    public List<Fireball> getFireballs() {
+        return fireballsView;
     }
 
-    public ArrayList<Prize> getRevealedPrizes() {
-        return revealedPrizes;
+    public List<Prize> getRevealedPrizes() {
+        return prizesView;
     }
 
-    /**
-     * Live list of every solid tile. Callers only iterate it, never mutate it.
-     */
-    public ArrayList<Brick> getBricks() {
-        return bricks;
+    /** Read-only list of every solid tile. */
+    public List<Brick> getBricks() {
+        return bricksView;
     }
 
     public void addBrick(Brick brick) {

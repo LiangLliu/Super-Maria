@@ -1,13 +1,18 @@
-package com.lianglliu.manager;
+package com.lianglliu.loader;
 
 import java.awt.image.BufferedImage;
+import java.util.List;
+
+import com.lianglliu.model.hero.MarioForm;
+import com.lianglliu.model.hero.MarioSprites;
 
 import static com.lianglliu.loader.ImageLoader.getSingleton;
 
 public final class Images {
 
-    public static final BufferedImage backgroundImage = getSingleton().loadImage("background.png");
     public static final BufferedImage sprite = getSingleton().getSprite();
+    public static final BufferedImage backgroundImage = getSingleton().loadImage("background.png");
+    public static final BufferedImage[] brickShatterFrames = getSingleton().getBrickFrames();
 
     public static final BufferedImage heartIcon = getSingleton().loadImage("heart-icon.png");
     public static final BufferedImage coinIcon = getSingleton().getSubImage(sprite, 1, 5, 48, 48);
@@ -32,5 +37,23 @@ public final class Images {
     public static final BufferedImage koopaRight = getSingleton().getSubImage(sprite, 4, 3, 48, 64);
     public static final BufferedImage endFlag = getSingleton().getSubImage(sprite, 5, 1, 48, 48);
 
+    /** Indexed by {@link MarioForm#SMALL}, {@link MarioForm#SUPER} and {@link MarioForm#FIRE}. */
+    public static final MarioSprites[] marioSprites = {
+            sprites(MarioForm.SMALL),
+            sprites(MarioForm.SUPER),
+            sprites(MarioForm.FIRE),
+    };
 
+    private static MarioSprites sprites(int form) {
+        var loader = getSingleton();
+        return new MarioSprites(frames(loader.getLeftFrames(form)), frames(loader.getRightFrames(form)),
+                loader.getSubImage(sprite, 3, 4, 24, 24));
+    }
+
+    private static List<BufferedImage> frames(BufferedImage[] frames) {
+        return List.of(frames);
+    }
+
+    private Images() {
+    }
 }

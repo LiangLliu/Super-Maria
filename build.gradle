@@ -12,6 +12,13 @@ application {
     mainClass = 'com.lianglliu.Main'
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    // this-escape is a false positive for these plain entity classes: their constructors only
+    // wire their own fields through final setters, and the hierarchy is closed.
+    options.compilerArgs += ['-Xlint:all,-this-escape', '-Werror']
+}
+
 group = 'org.lianglliu'
 version = '1.0-SNAPSHOT'
 

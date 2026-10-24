@@ -1,11 +1,12 @@
-package com.lianglliu.manager;
+package com.lianglliu.engine;
 
-import com.lianglliu.engine.GameEngine;
+import com.lianglliu.manager.ButtonAction;
+import com.lianglliu.manager.GameStatus;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 
 import static java.awt.event.KeyEvent.VK_A;
 import static java.awt.event.KeyEvent.VK_D;
@@ -19,9 +20,9 @@ import static java.awt.event.KeyEvent.VK_SPACE;
 import static java.awt.event.KeyEvent.VK_UP;
 import static java.awt.event.KeyEvent.VK_W;
 
-public class InputManager implements KeyListener, MouseListener {
+public class InputManager extends MouseAdapter implements KeyListener {
 
-    private GameEngine engine;
+    private final GameEngine engine;
 
     public InputManager(GameEngine engine) {
         this.engine = engine;
@@ -40,9 +41,8 @@ public class InputManager implements KeyListener, MouseListener {
                     yield ButtonAction.JUMP;
             }
             case VK_DOWN, VK_S -> {
-                if (status == GameStatus.START_SCREEN || status == GameStatus.MAP_SELECTION) {
+                if (status == GameStatus.START_SCREEN || status == GameStatus.MAP_SELECTION)
                     yield ButtonAction.GO_DOWN;
-                }
                 yield ButtonAction.NO_ACTION;
             }
 
@@ -79,21 +79,5 @@ public class InputManager implements KeyListener, MouseListener {
 
     @Override
     public void keyTyped(KeyEvent arg0) {
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseExited(MouseEvent e) {
     }
 }

@@ -1,8 +1,6 @@
 package com.lianglliu.loader;
 
 import com.lianglliu.config.GameConfig;
-import com.lianglliu.manager.Colors;
-import com.lianglliu.manager.Images;
 import com.lianglliu.model.EndFlag;
 import com.lianglliu.model.Map;
 import com.lianglliu.model.brick.GroundBrick;
@@ -51,10 +49,10 @@ public class MapLoader {
                 int xLocation = x * PIXEL_MULTIPLIER;
                 int yLocation = y * PIXEL_MULTIPLIER;
 
-                if (pixel == Colors.ground) {
+                if (pixel == Colors.GROUND) {
                     // The floor is the highest ground row; its art is already painted by background.png.
                     floorY = Math.min(floorY, yLocation);
-                } else if (pixel != Colors.empty && pixel != Colors.border
+                } else if (pixel != Colors.EMPTY && pixel != Colors.BORDER
                         && !processPixel(pixel, xLocation, yLocation, createdMap)) {
                     unknownColors.add(pixel);
                 }
@@ -73,25 +71,25 @@ public class MapLoader {
     }
 
     private boolean processPixel(int pixel, int x, int y, Map map) {
-        if (pixel == Colors.ordinaryBrick) {
-            map.addBrick(new OrdinaryBrick(x, y, Images.ordinaryBrick));
-        } else if (pixel == Colors.surpriseBrick) {
-            map.addBrick(new SurpriseBrick(x, y, Images.surpriseBrick, generateRandomPrize(x, y)));
-        } else if (pixel == Colors.pipe) {
+        if (pixel == Colors.ORDINARY_BRICK) {
+            map.addBrick(new OrdinaryBrick(x, y, Images.ordinaryBrick, Images.brickShatterFrames));
+        } else if (pixel == Colors.SURPRISE_BRICK) {
+            map.addBrick(new SurpriseBrick(x, y, Images.surpriseBrick, Images.surpriseBrickStyle, generateRandomPrize(x, y)));
+        } else if (pixel == Colors.PIPE) {
             map.addBrick(new Pipe(x, y, Images.pipe));
-        } else if (pixel == Colors.groundBrick) {
+        } else if (pixel == Colors.GROUND_BRICK) {
             map.addBrick(new GroundBrick(x, y, Images.groundBrick));
-        } else if (pixel == Colors.goomba) {
+        } else if (pixel == Colors.GOOMBA) {
             var enemy = new Roomba(x, y, Images.goombaLeft);
             enemy.setRightImage(Images.goombaRight);
             map.addEnemy(enemy);
-        } else if (pixel == Colors.koopa) {
+        } else if (pixel == Colors.KOOPA) {
             var enemy = new KoopaTroopa(x, y, Images.koopaLeft);
             enemy.setRightImage(Images.koopaRight);
             map.addEnemy(enemy);
-        } else if (pixel == Colors.mario) {
-            map.setMario(new Mario(x, y));
-        } else if (pixel == Colors.end) {
+        } else if (pixel == Colors.MARIO) {
+            map.setMario(new Mario(x, y, Images.marioSprites));
+        } else if (pixel == Colors.END) {
             map.setEndPoint(new EndFlag(x + 24, y, Images.endFlag));
         } else {
             return false;

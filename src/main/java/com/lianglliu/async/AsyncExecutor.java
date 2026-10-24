@@ -34,6 +34,9 @@ public final class AsyncExecutor {
     }
 
     public static class AsyncExecutionException extends RuntimeException {
+
+        private static final long serialVersionUID = 1L;
+
         public AsyncExecutionException(String message, Throwable cause) {
             super(message, cause);
         }

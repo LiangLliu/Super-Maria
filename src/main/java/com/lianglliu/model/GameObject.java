@@ -21,18 +21,18 @@ public abstract class GameObject {
     private boolean jumping;
 
     public GameObject(double x, double y, BufferedImage style) {
-        setLocation(x, y);
-        setStyle(style);
-
+        // Direct field initialization: the constructor must not call overridable setters.
+        this.x = x;
+        this.y = y;
+        this.style = style;
         if (style != null) {
-            setDimension(style.getWidth(), style.getHeight());
+            this.dimension = new Dimension(style.getWidth(), style.getHeight());
         }
-
-        setVelX(0);
-        setVelY(0);
-        setGravityAcc(0.38);
-        jumping = false;
-        falling = true;
+        this.velX = 0;
+        this.velY = 0;
+        this.gravityAcc = 0.38;
+        this.jumping = false;
+        this.falling = true;
     }
 
     public void draw(Graphics g) {
@@ -60,7 +60,7 @@ public abstract class GameObject {
         x = x + velX;
     }
 
-    public void setLocation(double x, double y) {
+    public final void setLocation(double x, double y) {
         setX(x);
         setY(y);
     }
@@ -69,7 +69,7 @@ public abstract class GameObject {
         return x;
     }
 
-    public void setX(double x) {
+    public final void setX(double x) {
         this.x = x;
     }
 
@@ -77,7 +77,7 @@ public abstract class GameObject {
         return y;
     }
 
-    public void setY(double y) {
+    public final void setY(double y) {
         this.y = y;
     }
 
@@ -85,11 +85,7 @@ public abstract class GameObject {
         return dimension;
     }
 
-    public void setDimension(Dimension dimension) {
-        this.dimension = dimension;
-    }
-
-    public void setDimension(int width, int height) {
+    public final void setDimension(int width, int height) {
         this.dimension = new Dimension(width, height);
     }
 
@@ -97,7 +93,7 @@ public abstract class GameObject {
         return style;
     }
 
-    public void setStyle(BufferedImage style) {
+    public final void setStyle(BufferedImage style) {
         this.style = style;
     }
 
@@ -105,7 +101,7 @@ public abstract class GameObject {
         return velX;
     }
 
-    public void setVelX(double velX) {
+    public final void setVelX(double velX) {
         this.velX = velX;
     }
 
@@ -113,16 +109,8 @@ public abstract class GameObject {
         return velY;
     }
 
-    public void setVelY(double velY) {
+    public final void setVelY(double velY) {
         this.velY = velY;
-    }
-
-    public double getGravityAcc() {
-        return gravityAcc;
-    }
-
-    public void setGravityAcc(double gravityAcc) {
-        this.gravityAcc = gravityAcc;
     }
 
     public Rectangle getTopBounds() {
@@ -149,7 +137,7 @@ public abstract class GameObject {
         return falling;
     }
 
-    public void setFalling(boolean falling) {
+    public final void setFalling(boolean falling) {
         this.falling = falling;
     }
 
@@ -157,7 +145,7 @@ public abstract class GameObject {
         return jumping;
     }
 
-    public void setJumping(boolean jumping) {
+    public final void setJumping(boolean jumping) {
         this.jumping = jumping;
     }
 }

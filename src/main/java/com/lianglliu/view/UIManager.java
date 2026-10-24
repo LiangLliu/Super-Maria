@@ -13,14 +13,16 @@ import com.lianglliu.config.GameConfig;
 import com.lianglliu.engine.GameEngine;
 import com.lianglliu.loader.FontLoader;
 import com.lianglliu.manager.GameStatus;
-import com.lianglliu.manager.Images;
+import com.lianglliu.loader.Images;
 
 public class UIManager extends JPanel {
 
-    private final GameEngine engine;
+    private static final long serialVersionUID = 1L;
+
+    private final transient GameEngine engine;
     private final Font gameFont;
-    private final MapSelection mapSelection;
-    private final UIRenderer uiRenderer;
+    private final transient MapSelection mapSelection;
+    private final transient UIRenderer uiRenderer;
     private Throwable renderFailure;
 
     public UIManager(GameEngine engine, int width, int height) {

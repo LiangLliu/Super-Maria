@@ -1,6 +1,6 @@
 package com.lianglliu.model.brick;
 
-import com.lianglliu.engine.GameEngine;
+import com.lianglliu.model.GameContext;
 import com.lianglliu.model.GameObject;
 import com.lianglliu.model.prize.Prize;
 
@@ -18,7 +18,7 @@ public abstract class Brick extends GameObject {
      *
      * @return the prize that popped out of the brick, or null
      */
-    public Prize reveal(GameEngine engine) {
+    public Prize reveal(GameContext context) {
         return null;
     }
 }

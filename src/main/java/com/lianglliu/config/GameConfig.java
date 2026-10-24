@@ -21,6 +21,7 @@ public final class GameConfig {
     public static final double MARIO_JUMP_VELOCITY = 10.0;
     public static final int MARIO_DEFAULT_LIVES = 3;
     public static final int MARIO_SIZE = 48;
+    public static final int MARIO_TALL_SIZE = 96;
 
     // Camera
     public static final int CAMERA_FOLLOW_OFFSET = 600;

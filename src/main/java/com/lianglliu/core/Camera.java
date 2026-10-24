@@ -10,7 +10,10 @@ public class Camera {
     private boolean shaking;
 
     public Camera() {
-        reset();
+        x = 0;
+        y = 0;
+        frameNumber = 0;
+        shaking = false;
     }
 
     public double getX() {

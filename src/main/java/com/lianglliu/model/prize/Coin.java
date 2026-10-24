@@ -1,6 +1,6 @@
 package com.lianglliu.model.prize;
 
-import com.lianglliu.engine.GameEngine;
+import com.lianglliu.model.GameContext;
 import com.lianglliu.model.GameObject;
 import com.lianglliu.model.hero.Mario;
 
@@ -32,13 +32,14 @@ public class Coin extends GameObject implements Prize {
     }
 
     @Override
-    public void onTouch(Mario mario, GameEngine engine) {
-        if (!acquired) {
-            acquired = true;
-            mario.acquirePoints(point);
-            mario.acquireCoin();
-            engine.playCoin();
+    public void onTouch(Mario mario, GameContext context) {
+        if (acquired) {
+            return;
         }
+        acquired = true;
+        mario.acquirePoints(point);
+        mario.acquireCoin();
+        context.playCoin();
     }
 
     @Override

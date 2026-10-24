@@ -1,53 +1,37 @@
 package com.lianglliu.model.hero;
 
-import java.awt.Graphics;
-
 import com.lianglliu.config.GameConfig;
-import com.lianglliu.engine.GameEngine;
-import com.lianglliu.loader.ImageLoader;
+import com.lianglliu.model.GameContext;
 import com.lianglliu.model.GameObject;
-import com.lianglliu.view.Animation;
 
-public class Mario extends GameObject {
+public final class Mario extends GameObject {
 
     private int remainingLives;
     private int coins;
     private int points;
+    private final MarioSprites[] sprites;
     private MarioForm marioForm;
     private boolean toRight = true;
 
-    public Mario(double x, double y) {
+    public Mario(double x, double y, MarioSprites[] sprites) {
         super(x, y, null);
-        setDimension(GameConfig.MARIO_SIZE, GameConfig.MARIO_SIZE);
-
+        this.sprites = sprites;
         remainingLives = GameConfig.MARIO_DEFAULT_LIVES;
-        points = 0;
-        coins = 0;
-
-        var imageLoader = ImageLoader.getSingleton();
-        var leftFrames = imageLoader.getLeftFrames(MarioForm.SMALL);
-        var rightFrames = imageLoader.getRightFrames(MarioForm.SMALL);
-
-        var animation = new Animation(leftFrames, rightFrames);
-        marioForm = new MarioForm(animation, false, false);
-        setStyle(marioForm.getCurrentStyle(toRight, false, false));
+        setForm(MarioForm.SMALL);
     }
 
     @Override
-    public void draw(Graphics g) {
-        boolean movingInX = (getVelX() != 0);
-        boolean movingInY = (getVelY() != 0);
-
-        setStyle(marioForm.getCurrentStyle(toRight, movingInX, movingInY));
-
-        super.draw(g);
+    public void updateLocation() {
+        // The style is part of the simulation, not of painting: the EDT only reads it.
+        setStyle(marioForm.style(toRight, getVelX() != 0, getVelY() != 0));
+        super.updateLocation();
     }
 
-    public void jump(GameEngine engine) {
+    public void jump(GameContext context) {
         if (!isJumping() && !isFalling()) {
             setJumping(true);
             setVelY(GameConfig.MARIO_JUMP_VELOCITY);
-            engine.playJump();
+            context.playJump();
         }
     }
 
@@ -56,18 +40,40 @@ public class Mario extends GameObject {
         this.toRight = toRight;
     }
 
-    public boolean onTouchEnemy(GameEngine engine) {
-
-        if (!marioForm.isSuper() && !marioForm.isFire()) {
+    /**
+     * @return true when Mario lost a life
+     */
+    public boolean onTouchEnemy(GameContext context) {
+        if (marioForm.isSmall()) {
             remainingLives--;
-            engine.playMarioDies();
+            context.playMarioDies();
             return true;
-        } else {
-            engine.shakeCamera();
-            marioForm = marioForm.onTouchEnemy();
-            setDimension(GameConfig.MARIO_SIZE, GameConfig.MARIO_SIZE);
+        }
+        context.shakeCamera();
+        setForm(MarioForm.SMALL);
+        return false;
+    }
+
+    /**
+     * @return true when the form changed
+     */
+    public boolean growSuper() {
+        if (!marioForm.isSmall()) {
             return false;
         }
+        setForm(MarioForm.SUPER);
+        return true;
+    }
+
+    /**
+     * @return true when the form changed
+     */
+    public boolean growFire() {
+        if (marioForm.isFire()) {
+            return false;
+        }
+        setForm(MarioForm.FIRE);
+        return true;
     }
 
     public Fireball fire() {
@@ -98,16 +104,13 @@ public class Mario extends GameObject {
         return coins;
     }
 
-    public MarioForm getMarioForm() {
-        return marioForm;
-    }
-
-    public void setMarioForm(MarioForm marioForm) {
-        this.marioForm = marioForm;
-    }
-
+    /** True for the super and the fire form; bricks break for both. */
     public boolean isSuper() {
-        return marioForm.isSuper();
+        return !marioForm.isSmall();
+    }
+
+    public boolean isFire() {
+        return marioForm.isFire();
     }
 
     public boolean getToRight() {
@@ -120,5 +123,11 @@ public class Mario extends GameObject {
         setX(50);
         setJumping(false);
         setFalling(true);
+    }
+
+    private void setForm(int form) {
+        marioForm = new MarioForm(sprites[form], form);
+        setDimension(GameConfig.MARIO_SIZE, form == MarioForm.SMALL ? GameConfig.MARIO_SIZE : GameConfig.MARIO_TALL_SIZE);
+        setStyle(marioForm.style(toRight, false, false));
     }
 }

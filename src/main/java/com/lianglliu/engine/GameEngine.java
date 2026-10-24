@@ -12,13 +12,14 @@ import com.lianglliu.config.GameConfig;
 import com.lianglliu.core.Camera;
 import com.lianglliu.manager.ButtonAction;
 import com.lianglliu.manager.GameStatus;
-import com.lianglliu.manager.InputManager;
 import com.lianglliu.manager.MapManager;
 import com.lianglliu.manager.SoundManager;
+import com.lianglliu.model.GameContext;
+import com.lianglliu.model.brick.OrdinaryBrick;
 import com.lianglliu.view.StartScreenSelection;
 import com.lianglliu.view.UIManager;
 
-public class GameEngine implements Runnable {
+public class GameEngine implements Runnable, GameContext {
 
     private final Camera camera = new Camera();
     private MapManager mapManager;
@@ -43,7 +44,7 @@ public class GameEngine implements Runnable {
 
         var uiManagerCompletableFuture = AsyncExecutor.supplyAsync(() -> new UIManager(this, GameConfig.GAME_WIDTH, GameConfig.GAME_HEIGHT));
         var soundManagerCompletableFuture = AsyncExecutor.supplyAsync(SoundManager::new);
-        var mapManagerCompletableFuture = AsyncExecutor.supplyAsync(MapManager::new);
+        var mapManagerCompletableFuture = AsyncExecutor.supplyAsync(() -> new MapManager(camera));
 
         uiManager = AsyncExecutor.fetch(uiManagerCompletableFuture);
         soundManager = AsyncExecutor.fetch(soundManagerCompletableFuture);
@@ -76,6 +77,7 @@ public class GameEngine implements Runnable {
         setGameStatus(GameStatus.START_SCREEN);
     }
 
+    @Override
     public void resetCamera() {
         camera.reset();
         soundManager.restartBackground();
@@ -170,7 +172,7 @@ public class GameEngine implements Runnable {
         repaintRequested = true;
         mapManager.updateLocations();
         mapManager.checkCollisions(this);
-        mapManager.updateCamera(camera);
+        mapManager.updateCamera();
 
         if (mapManager.isGameOver()) {
             setGameStatus(GameStatus.GAME_OVER);
@@ -179,7 +181,6 @@ public class GameEngine implements Runnable {
             return;
         }
 
-        mapManager.checkMission();
         if (mapManager.endLevel()) {
             setGameStatus(GameStatus.MISSION_PASSED);
         }
@@ -210,6 +211,7 @@ public class GameEngine implements Runnable {
         }
     }
 
+    @Override
     public void shakeCamera() {
         camera.shakeCamera();
     }
@@ -251,32 +253,49 @@ public class GameEngine implements Runnable {
         return new Point((int) camera.getX(), (int) camera.getY());
     }
 
-    public void playCoin() {
-        soundManager.playCoin();
-    }
-
-    public void playOneUp() {
-        soundManager.playOneUp();
-    }
-
-    public void playSuperMushroom() {
-        soundManager.playSuperMushroom();
-    }
-
-    public void playMarioDies() {
-        soundManager.playMarioDies();
-    }
-
+    @Override
     public void playJump() {
         soundManager.playJump();
     }
 
+    @Override
+    public void playCoin() {
+        soundManager.playCoin();
+    }
+
+    @Override
+    public void playStomp() {
+        soundManager.playStomp();
+    }
+
+    @Override
     public void playFireball() {
         soundManager.playFireball();
     }
 
-    public void playStomp() {
-        soundManager.playStomp();
+    @Override
+    public void playOneUp() {
+        soundManager.playOneUp();
+    }
+
+    @Override
+    public void playSuperMushroom() {
+        soundManager.playSuperMushroom();
+    }
+
+    @Override
+    public void playMarioDies() {
+        soundManager.playMarioDies();
+    }
+
+    @Override
+    public boolean isMarioSuper() {
+        return mapManager.isMarioSuper();
+    }
+
+    @Override
+    public void revealBrick(OrdinaryBrick brick) {
+        mapManager.addRevealedBrick(brick);
     }
 
     public MapManager getMapManager() {
