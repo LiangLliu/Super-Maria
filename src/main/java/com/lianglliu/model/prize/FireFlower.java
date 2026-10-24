@@ -29,8 +29,6 @@ public class FireFlower extends BoostItem {
             var newForm = new MarioForm(animation, true, true);
             mario.setMarioForm(newForm);
             mario.setDimension(48, 96);
-
-            engine.playFireFlower();
         }
     }
 

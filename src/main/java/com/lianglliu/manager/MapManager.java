@@ -1,5 +1,7 @@
 package com.lianglliu.manager;
 
+import com.lianglliu.config.GameConfig;
+import com.lianglliu.core.Camera;
 import com.lianglliu.engine.GameEngine;
 import com.lianglliu.loader.MapLoader;
 import com.lianglliu.model.GameObject;
@@ -16,86 +18,145 @@ import com.lianglliu.model.prize.Prize;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.util.ArrayList;
-import java.util.Optional;
 
+/**
+ * Owns the current map and is the single entry point for everything that touches it.
+ * Every public method is synchronized because the game loop runs on its own thread while
+ * Swing repaints and input events read/drive the same state on the EDT.
+ */
 public class MapManager {
+
+    private static final double LEVEL_TIME_SECONDS = 400;
 
     private Map map;
 
     public MapManager() {
     }
 
-    public void updateLocations() {
+    public synchronized void updateLocations() {
         if (map == null) {
             return;
         }
         map.updateLocations();
     }
 
-    public void resetCurrentMap(GameEngine engine) {
-        Mario mario = getMario();
+    public synchronized void updateCamera(Camera camera) {
+        if (map == null) {
+            return;
+        }
+        Mario mario = map.getMario();
+        double shiftAmount = 0;
+
+        if (mario.getVelX() > 0 && mario.getX() - GameConfig.CAMERA_FOLLOW_OFFSET > camera.getX()) {
+            shiftAmount = mario.getVelX();
+        }
+
+        camera.moveCam(shiftAmount, 0);
+    }
+
+    public synchronized void resetCurrentMap(GameEngine engine) {
+        if (map == null) {
+            return;
+        }
+        Mario mario = map.getMario();
+        String path = map.getPath();
+
         mario.resetLocation();
         engine.resetCamera();
-        createMap(map.getPath());
-        map.setMario(mario);
-    }
 
-    public boolean createMap(String path) {
-        map = MapLoader.getSingleton().createMap("maps/" + path, 400);
-        return map != null;
-    }
-
-    public void acquirePoints(int point) {
-        getMario().acquirePoints(point);
-    }
-
-    public Mario getMario() {
-        return map.getMario();
-    }
-
-    public void fire(GameEngine engine) {
-        var fireball = getMario().fire();
-        Optional.ofNullable(fireball).ifPresent(it -> {
-            map.addFireball(it);
-            engine.playFireball();
-        });
-    }
-
-    public boolean isGameOver() {
-        return getMario().getRemainingLives() == 0 || map.isTimeOver();
-    }
-
-    public int getScore() {
-        return getMario().getPoints();
-    }
-
-    public int getRemainingLives() {
-        return getMario().getRemainingLives();
-    }
-
-    public int getCoins() {
-        return getMario().getCoins();
-    }
-
-    public void drawMap(Graphics2D g2) {
-        map.drawMap(g2);
-    }
-
-    public int passMission() {
-        if (getMario().getX() >= map.getEndPoint().getX() && !map.getEndPoint().isTouched()) {
-            map.getEndPoint().setTouched(true);
-            int height = (int) getMario().getY();
-            return height * 2;
+        if (createMap(path)) {
+            map.setMario(mario);
         }
-        return -1;
     }
 
-
-    public boolean endLevel() {
-        return getMario().getX() >= map.getEndPoint().getX() + 320;
+    public synchronized boolean createMap(String path) {
+        var created = MapLoader.getSingleton().createMap("maps/" + path, LEVEL_TIME_SECONDS);
+        if (created == null) {
+            return false;
+        }
+        map = created;
+        return true;
     }
 
-    public void checkCollisions(GameEngine engine) {
+    public synchronized void jump(GameEngine engine) {
+        if (map != null) {
+            map.getMario().jump(engine);
+        }
+    }
+
+    public synchronized void move(boolean toRight) {
+        if (map != null) {
+            map.getMario().move(toRight);
+        }
+    }
+
+    public synchronized void stopMoving() {
+        if (map != null) {
+            map.getMario().setVelX(0);
+        }
+    }
+
+    public synchronized void fire(GameEngine engine) {
+        if (map == null) {
+            return;
+        }
+        var fireball = map.getMario().fire();
+        if (fireball != null) {
+            map.addFireball(fireball);
+            engine.playFireball();
+        }
+    }
+
+    public synchronized boolean isMarioSuper() {
+        return map != null && map.getMario().isSuper();
+    }
+
+    public synchronized boolean isGameOver() {
+        return map != null && (map.getMario().getRemainingLives() == 0 || map.isTimeOver());
+    }
+
+    public synchronized int getScore() {
+        return map == null ? 0 : map.getMario().getPoints();
+    }
+
+    public synchronized int getRemainingLives() {
+        return map == null ? 0 : map.getMario().getRemainingLives();
+    }
+
+    public synchronized int getCoins() {
+        return map == null ? 0 : map.getMario().getCoins();
+    }
+
+    public synchronized int getRemainingTime() {
+        return map == null ? 0 : (int) map.getRemainingTime();
+    }
+
+    public synchronized void drawMap(Graphics2D g2) {
+        if (map != null) {
+            map.drawMap(g2);
+        }
+    }
+
+    /** Awards the flag bonus once, then {@link #endLevel()} takes over. */
+    public synchronized void checkMission() {
+        if (map == null) {
+            return;
+        }
+        var mario = map.getMario();
+        var endPoint = map.getEndPoint();
+
+        if (mario.getX() >= endPoint.getX() && !endPoint.isTouched()) {
+            endPoint.setTouched(true);
+            int height = (int) (map.getBottomBorder() - mario.getY());
+            mario.acquirePoints(Math.max(0, height) * GameConfig.Scoring.FLAG_HEIGHT_MULTIPLIER);
+        }
+    }
+
+    public synchronized boolean endLevel() {
+        return map != null && map.getMario().getX() >= map.getEndPoint().getX() + 320;
+    }
+
+    public synchronized void checkCollisions(GameEngine engine) {
         if (map == null) {
             return;
         }
@@ -108,9 +169,23 @@ public class MapManager {
         checkFireballContact();
     }
 
+    public synchronized void addRevealedBrick(OrdinaryBrick ordinaryBrick) {
+        map.addRevealedBrick(ordinaryBrick);
+    }
+
+    public synchronized void updateTime() {
+        if (map != null) {
+            map.updateTime(1);
+        }
+    }
+
+    private Mario mario() {
+        return map.getMario();
+    }
+
     private void checkBottomCollisions(GameEngine engine) {
-        Mario mario = getMario();
-        var bricks = map.getAllBricks();
+        Mario mario = mario();
+        var bricks = map.getBricks();
         var enemies = map.getEnemies();
         var removalList = new ArrayList<GameObject>();
         Rectangle marioBottom = mario.getBottomBounds();
@@ -129,7 +204,7 @@ public class MapManager {
 
         for (Enemy enemy : enemies) {
             if (marioBottom.intersects(enemy.getTopBounds())) {
-                mario.acquirePoints(100);
+                mario.acquirePoints(GameConfig.Scoring.ENEMY_STOMP_POINTS);
                 removalList.add(enemy);
                 engine.playStomp();
             }
@@ -145,9 +220,9 @@ public class MapManager {
     }
 
     private void checkTopCollisions(GameEngine engine) {
-        Mario mario = getMario();
+        Mario mario = mario();
         Rectangle marioTop = mario.getTopBounds();
-        for (Brick brick : map.getAllBricks()) {
+        for (Brick brick : map.getBricks()) {
             if (marioTop.intersects(brick.getBottomBounds())) {
                 mario.setVelY(0);
                 mario.setY(brick.getY() + brick.getDimension().height);
@@ -160,8 +235,8 @@ public class MapManager {
     }
 
     private void checkMarioHorizontalCollision(GameEngine engine) {
-        Mario mario = getMario();
-        var bricks = map.getAllBricks();
+        Mario mario = mario();
+        var bricks = map.getBricks();
         var enemies = map.getEnemies();
         var removalList = new ArrayList<GameObject>();
         boolean marioDies = false;
@@ -200,7 +275,7 @@ public class MapManager {
     }
 
     private void checkEnemyCollisions() {
-        var bricks = map.getAllBricks();
+        var bricks = map.getBricks();
         var enemies = map.getEnemies();
 
         for (Enemy enemy : enemies) {
@@ -212,7 +287,6 @@ public class MapManager {
                 if (enemyHor.intersects(brickHor)) {
                     enemy.setVelX(-enemy.getVelX());
                 }
-
 
                 if (enemy.getBottomBounds().intersects(brick.getTopBounds())) {
                     enemy.setFalling(false);
@@ -235,7 +309,7 @@ public class MapManager {
 
     private void checkPrizeCollision() {
         var prizes = map.getRevealedPrizes();
-        var bricks = map.getAllBricks();
+        var bricks = map.getBricks();
 
         for (var prize : prizes) {
             if (prize instanceof BoostItem boostItem) {
@@ -248,7 +322,7 @@ public class MapManager {
                     boostItem.setVelY(0);
                     boostItem.setY(map.getBottomBorder() - boostItem.getDimension().height);
                     if (boostItem.getVelX() == 0) {
-                        boostItem.setVelX(2);
+                        boostItem.setVelX(GameConfig.BOOST_ITEM_SPEED);
                     }
                 }
             }
@@ -267,7 +341,7 @@ public class MapManager {
                 boostItem.setVelY(0);
                 boostItem.setY(brick.getY() - boostItem.getDimension().height + 1);
                 if (boostItem.getVelX() == 0) {
-                    boostItem.setVelX(2);
+                    boostItem.setVelX(GameConfig.BOOST_ITEM_SPEED);
                 }
             }
 
@@ -282,15 +356,12 @@ public class MapManager {
     private void checkPrizeContact(GameEngine engine) {
         var prizes = map.getRevealedPrizes();
         var removalList = new ArrayList<GameObject>();
-        Rectangle marioBounds = getMario().getBounds();
+        Rectangle marioBounds = mario().getBounds();
 
         for (var prize : prizes) {
-            Rectangle prizeBounds = prize.getBounds();
-            if (prizeBounds.intersects(marioBounds)) {
-                prize.onTouch(getMario(), engine);
+            if (prize.getBounds().intersects(marioBounds)) {
+                prize.onTouch(mario(), engine);
                 removalList.add((GameObject) prize);
-            } else if (prize instanceof Coin coin) {
-                coin.onTouch(getMario(), engine);
             }
         }
         removeObjects(removalList);
@@ -299,7 +370,7 @@ public class MapManager {
     private void checkFireballContact() {
         var fireballs = map.getFireballs();
         var enemies = map.getEnemies();
-        var bricks = map.getAllBricks();
+        var bricks = map.getBricks();
         var removalList = new ArrayList<GameObject>();
 
         for (var fireball : fireballs) {
@@ -307,7 +378,7 @@ public class MapManager {
 
             for (var enemy : enemies) {
                 if (fireballBounds.intersects(enemy.getBounds())) {
-                    acquirePoints(100);
+                    mario().acquirePoints(GameConfig.Scoring.ENEMY_STOMP_POINTS);
                     removalList.add(enemy);
                     removalList.add(fireball);
                 }
@@ -323,31 +394,14 @@ public class MapManager {
     }
 
     private void removeObjects(ArrayList<GameObject> removalList) {
-        if (removalList == null || removalList.isEmpty()) {
-            return;
-        }
         for (var object : removalList) {
             if (object instanceof Fireball fireball) {
                 map.removeFireball(fireball);
             } else if (object instanceof Enemy enemy) {
                 map.removeEnemy(enemy);
-            } else if (object instanceof Coin || object instanceof BoostItem) {
-                map.removePrize((Prize) object);
+            } else if (object instanceof Prize prize) {
+                map.removePrize(prize);
             }
         }
-    }
-
-    public void addRevealedBrick(OrdinaryBrick ordinaryBrick) {
-        map.addRevealedBrick(ordinaryBrick);
-    }
-
-    public void updateTime() {
-        if (map != null) {
-            map.updateTime(1);
-        }
-    }
-
-    public int getRemainingTime() {
-        return (int) map.getRemainingTime();
     }
 }

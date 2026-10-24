@@ -3,14 +3,16 @@ package com.lianglliu.loader;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.Objects;
+import java.io.UncheckedIOException;
 
 public class ImageLoader {
 
+    private final BufferedImage sprite;
     private final BufferedImage marioForms;
     private final BufferedImage brickAnimation;
 
     private ImageLoader() {
+        sprite = loadImage("sprite.png");
         marioForms = loadImage("mario-forms.png");
         brickAnimation = loadImage("brick-animation.png");
     }
@@ -23,13 +25,27 @@ public class ImageLoader {
         return Inner.INSTANCE;
     }
 
+    /**
+     * @throws IllegalStateException if the resource is missing or is not a readable image
+     */
     public BufferedImage loadImage(String path) {
-        try {
-            return ImageIO.read(Objects.requireNonNull(ResourceLoader.getResourceURL(path)));
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        var url = ResourceLoader.getResourceURL(path);
+        if (url == null) {
+            throw new IllegalStateException("Missing resource: " + path);
         }
+        try {
+            var image = ImageIO.read(url);
+            if (image == null) {
+                throw new IllegalStateException("Unreadable image: " + path);
+            }
+            return image;
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to read " + path, e);
+        }
+    }
+
+    public BufferedImage getSprite() {
+        return sprite;
     }
 
     public BufferedImage getSubImage(BufferedImage image, int col, int row, int w, int h) {

@@ -2,6 +2,7 @@ package com.lianglliu.engine;
 
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.util.concurrent.locks.LockSupport;
 
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
@@ -19,16 +20,18 @@ import com.lianglliu.view.UIManager;
 
 public class GameEngine implements Runnable {
 
+    private final Camera camera = new Camera();
     private MapManager mapManager;
     private UIManager uiManager;
     private SoundManager soundManager;
-    private GameStatus gameStatus;
-    private boolean isRunning;
-    private Camera camera;
+    private InputHandler inputHandler;
+    private volatile GameStatus gameStatus = GameStatus.START_SCREEN;
+    private volatile boolean isRunning;
+    private volatile boolean repaintRequested = true;
     private Thread thread;
     private StartScreenSelection startScreenSelection = StartScreenSelection.START_GAME;
     private int selectedMap = 0;
-    private InputHandler inputHandler;
+    private long lastTimeTick = System.currentTimeMillis();
 
     public GameEngine() {
         init();
@@ -37,9 +40,6 @@ public class GameEngine implements Runnable {
     private void init() {
         var inputManager = new InputManager(this);
         inputHandler = new InputHandler(this);
-        gameStatus = GameStatus.START_SCREEN;
-
-        camera = new Camera();
 
         var uiManagerCompletableFuture = AsyncExecutor.supplyAsync(() -> new UIManager(this, GameConfig.GAME_WIDTH, GameConfig.GAME_HEIGHT));
         var soundManagerCompletableFuture = AsyncExecutor.supplyAsync(SoundManager::new);
@@ -77,7 +77,7 @@ public class GameEngine implements Runnable {
     }
 
     public void resetCamera() {
-        camera = new Camera();
+        camera.reset();
         soundManager.restartBackground();
     }
 
@@ -97,89 +97,92 @@ public class GameEngine implements Runnable {
 
     public void changeSelectedMap(boolean up) {
         selectedMap = uiManager.changeSelectedMap(selectedMap, up);
+        repaintRequested = true;
     }
 
     private void createMap(String path) {
-        boolean loaded = mapManager.createMap(path);
-        if (loaded) {
+        if (mapManager.createMap(path)) {
             setGameStatus(GameStatus.RUNNING);
             soundManager.restartBackground();
         } else {
             setGameStatus(GameStatus.START_SCREEN);
         }
-
     }
 
     @Override
     public void run() {
-        long lastTime = System.nanoTime();
-        double ns = GameConfig.NANOSECONDS_PER_SECOND / GameConfig.TARGET_FPS;
+        double nanosPerFrame = GameConfig.NANOSECONDS_PER_SECOND / GameConfig.TARGET_FPS;
+        long previous = System.nanoTime();
+        long nextFrame = previous;
         double delta = 0;
-        long timer = System.currentTimeMillis();
 
-        while (isRunning && !thread.isInterrupted()) {
+        try {
+            while (isRunning && !thread.isInterrupted()) {
+                long now = System.nanoTime();
+                delta = Math.min(delta + (now - previous) / nanosPerFrame, GameConfig.MAX_UPDATES_PER_FRAME);
+                previous = now;
 
-            long now = System.nanoTime();
-            delta += (now - lastTime) / ns;
-            lastTime = now;
-            while (delta >= 1) {
-                if (gameStatus == GameStatus.RUNNING) {
-                    gameLoop();
+                while (delta >= 1) {
+                    if (gameStatus == GameStatus.RUNNING) {
+                        gameLoop();
+                    }
+                    delta--;
                 }
-                delta--;
-            }
-            render();
 
-            if (gameStatus != GameStatus.RUNNING) {
-                timer = System.currentTimeMillis();
-            }
+                render();
+                updateTimeLimit();
 
-            if (System.currentTimeMillis() - timer > GameConfig.TIMER_UPDATE_INTERVAL_MS) {
-                timer += GameConfig.TIMER_UPDATE_INTERVAL_MS;
-                mapManager.updateTime();
+                nextFrame += (long) nanosPerFrame;
+                long wait = nextFrame - System.nanoTime();
+                if (wait > 0) {
+                    LockSupport.parkNanos(wait);
+                } else {
+                    nextFrame = System.nanoTime();
+                }
             }
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+        } finally {
+            isRunning = false;
         }
     }
 
     private void render() {
-        uiManager.repaint();
+        if (repaintRequested) {
+            repaintRequested = false;
+            uiManager.repaint();
+        }
+    }
+
+    private void updateTimeLimit() {
+        long now = System.currentTimeMillis();
+        if (gameStatus != GameStatus.RUNNING) {
+            lastTimeTick = now;
+            return;
+        }
+        if (now - lastTimeTick >= GameConfig.TIMER_UPDATE_INTERVAL_MS) {
+            lastTimeTick = now;
+            mapManager.updateTime();
+        }
     }
 
     private void gameLoop() {
-        updateLocations();
-        checkCollisions();
-        updateCamera();
-
-        if (isGameOver()) {
-            setGameStatus(GameStatus.GAME_OVER);
-        }
-
-        int missionPassed = passMission();
-        if (missionPassed > -1) {
-            mapManager.acquirePoints(missionPassed);
-            //setGameStatus(GameStatus.MISSION_PASSED);
-        } else if (mapManager.endLevel())
-            setGameStatus(GameStatus.MISSION_PASSED);
-    }
-
-    private void updateCamera() {
-        var mario = mapManager.getMario();
-        double marioVelocityX = mario.getVelX();
-        double shiftAmount = 0;
-
-        if (marioVelocityX > 0 && mario.getX() - GameConfig.CAMERA_FOLLOW_OFFSET > camera.getX()) {
-            shiftAmount = marioVelocityX;
-        }
-
-        camera.moveCam(shiftAmount, 0);
-    }
-
-    private void updateLocations() {
+        repaintRequested = true;
         mapManager.updateLocations();
-    }
-
-    private void checkCollisions() {
         mapManager.checkCollisions(this);
+        mapManager.updateCamera(camera);
+
+        if (mapManager.isGameOver()) {
+            setGameStatus(GameStatus.GAME_OVER);
+            soundManager.pauseBackground();
+            soundManager.playGameOver();
+            return;
+        }
+
+        mapManager.checkMission();
+        if (mapManager.endLevel()) {
+            setGameStatus(GameStatus.MISSION_PASSED);
+        }
     }
 
     public void receiveInput(ButtonAction input) {
@@ -188,6 +191,7 @@ public class GameEngine implements Runnable {
 
     public void selectOption(boolean selectUp) {
         startScreenSelection = startScreenSelection.select(selectUp);
+        repaintRequested = true;
     }
 
     public void startGame() {
@@ -210,13 +214,6 @@ public class GameEngine implements Runnable {
         camera.shakeCamera();
     }
 
-    private boolean isGameOver() {
-        if (gameStatus == GameStatus.RUNNING)
-            return mapManager.isGameOver();
-        return false;
-    }
-
-
     public GameStatus getGameStatus() {
         return gameStatus;
     }
@@ -227,6 +224,7 @@ public class GameEngine implements Runnable {
 
     public void setGameStatus(GameStatus gameStatus) {
         this.gameStatus = gameStatus;
+        repaintRequested = true;
     }
 
     public int getScore() {
@@ -253,14 +251,6 @@ public class GameEngine implements Runnable {
         return new Point((int) camera.getX(), (int) camera.getY());
     }
 
-    public Camera getCamera() {
-        return camera;
-    }
-
-    private int passMission() {
-        return mapManager.passMission();
-    }
-
     public void playCoin() {
         soundManager.playCoin();
     }
@@ -281,10 +271,6 @@ public class GameEngine implements Runnable {
         soundManager.playJump();
     }
 
-    public void playFireFlower() {
-        soundManager.playFireFlower();
-    }
-
     public void playFireball() {
         soundManager.playFireball();
     }
@@ -296,7 +282,6 @@ public class GameEngine implements Runnable {
     public MapManager getMapManager() {
         return mapManager;
     }
-
 
     public int getRemainingTime() {
         return mapManager.getRemainingTime();

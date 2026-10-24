@@ -19,7 +19,6 @@ public class SoundManager {
     private final Map<SoundType, Clip> soundMaps;
     private long clipTime = 0;
 
-
     private enum SoundType {
         JUMP("jump"),
         COIN("coin"),
@@ -30,13 +29,13 @@ public class SoundManager {
         SUPER_MUSHROOM("superMushroom"),
         MARIO_DIES("marioDies"),
         ;
+
         private final String sound;
 
         SoundType(String sound) {
             this.sound = sound;
         }
     }
-
 
     public SoundManager() {
         background = getClip(loadAudio("background"));
@@ -54,44 +53,49 @@ public class SoundManager {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private AudioInputStream loadAudio(String url) {
-        System.out.println("Loading " + url);
+    private AudioInputStream loadAudio(String name) {
         try {
-            var inputStream = ResourceLoader.getResource("audio/" + url + ".wav");
-            var bufferedIn = new BufferedInputStream(inputStream);
-            return AudioSystem.getAudioInputStream(bufferedIn);
-
+            var inputStream = ResourceLoader.getResource("audio/" + name + ".wav");
+            return AudioSystem.getAudioInputStream(new BufferedInputStream(inputStream));
         } catch (Exception e) {
-            System.err.println(e.getMessage());
+            System.err.println("Cannot load audio: " + name + " (" + e + ")");
+            return null;
         }
-
-        return null;
     }
 
     private Clip getClip(AudioInputStream stream) {
-
+        if (stream == null) {
+            return null;
+        }
         try {
             var clip = AudioSystem.getClip();
             clip.open(stream);
             return clip;
         } catch (Exception e) {
-            e.printStackTrace();
+            return null;
         }
-
-        return null;
     }
 
-    public void resumeBackground() {
+    /**
+     * Machines without an audio device get null clips, so every playback entry point tolerates them.
+     */
+    public synchronized void resumeBackground() {
+        if (background == null) {
+            return;
+        }
         background.setMicrosecondPosition(clipTime);
         background.start();
     }
 
-    public void pauseBackground() {
+    public synchronized void pauseBackground() {
+        if (background == null) {
+            return;
+        }
         clipTime = background.getMicrosecondPosition();
         background.stop();
     }
 
-    public void restartBackground() {
+    public synchronized void restartBackground() {
         clipTime = 0;
         resumeBackground();
     }
@@ -126,9 +130,6 @@ public class SoundManager {
 
     public void playMarioDies() {
         playSound(SoundType.MARIO_DIES);
-    }
-
-    public void playFireFlower() {
     }
 
     private void playSound(SoundType sound) {

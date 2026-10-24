@@ -1,7 +1,7 @@
 package com.lianglliu.model.hero;
 
-import com.lianglliu.view.Animation;
 import com.lianglliu.loader.ImageLoader;
+import com.lianglliu.view.Animation;
 
 import java.awt.image.BufferedImage;
 
@@ -10,7 +10,7 @@ public class MarioForm {
     public static final int SMALL = 0, SUPER = 1, FIRE = 2;
 
     private final Animation animation;
-    private boolean isSuper;
+    private final boolean isSuper;
     private final boolean isFire; //note: fire form has priority over super form
     private final BufferedImage fireballStyle;
 
@@ -19,9 +19,8 @@ public class MarioForm {
         this.isSuper = isSuper;
         this.isFire = isFire;
 
-        ImageLoader imageLoader = ImageLoader.getSingleton();
-        BufferedImage fireball = imageLoader.loadImage("sprite.png");
-        fireballStyle = imageLoader.getSubImage(fireball, 3, 4, 24, 24);
+        var imageLoader = ImageLoader.getSingleton();
+        fireballStyle = imageLoader.getSubImage(imageLoader.getSprite(), 3, 4, 24, 24);
     }
 
     public BufferedImage getCurrentStyle(boolean toRight, boolean movingInX, boolean movingInY) {
@@ -49,8 +48,8 @@ public class MarioForm {
 
         var imageLoader = ImageLoader.getSingleton();
 
-        var leftFrames = imageLoader.getLeftFrames(0);
-        var rightFrames = imageLoader.getRightFrames(0);
+        var leftFrames = imageLoader.getLeftFrames(SMALL);
+        var rightFrames = imageLoader.getRightFrames(SMALL);
 
         var newAnimation = new Animation(leftFrames, rightFrames);
 
@@ -66,10 +65,6 @@ public class MarioForm {
 
     public boolean isSuper() {
         return isSuper;
-    }
-
-    public void setSuper(boolean aSuper) {
-        isSuper = aSuper;
     }
 
     public boolean isFire() {

@@ -1,5 +1,6 @@
 package com.lianglliu.loader;
 
+import com.lianglliu.config.GameConfig;
 import com.lianglliu.manager.Colors;
 import com.lianglliu.manager.Images;
 import com.lianglliu.model.EndFlag;
@@ -17,46 +18,69 @@ import com.lianglliu.model.prize.OneUpMushroom;
 import com.lianglliu.model.prize.Prize;
 import com.lianglliu.model.prize.SuperMushroom;
 
+import java.awt.image.BufferedImage;
+import java.util.HashSet;
+
 public class MapLoader {
 
-    private static final int PIXEL_MULTIPLIER = 48;
+    private static final int PIXEL_MULTIPLIER = GameConfig.PIXEL_MULTIPLIER;
+    private static final int PRIZE_RANDOM_BOUND = 12;
 
     public Map createMap(String mapPath, double timeLimit) {
-        var mapImage = ImageLoader.getSingleton().loadImage(mapPath);
-
-        if (mapImage == null) {
-            System.out.println("Given path is invalid...");
+        BufferedImage mapImage;
+        try {
+            mapImage = ImageLoader.getSingleton().loadImage(mapPath);
+        } catch (RuntimeException e) {
+            System.err.println("Cannot load map " + mapPath + ": " + e.getMessage());
             return null;
         }
 
-        var createdMap = new Map(timeLimit, Images.backgroundImage);
+        int width = mapImage.getWidth();
+        int height = mapImage.getHeight();
+        var createdMap = new Map(timeLimit, Images.backgroundImage,
+                width * PIXEL_MULTIPLIER, height * PIXEL_MULTIPLIER);
         String[] paths = mapPath.split("/");
         createdMap.setPath(paths[paths.length - 1]);
 
-        for (int x = 0; x < mapImage.getWidth(); x++) {
-            for (int y = 0; y < mapImage.getHeight(); y++) {
-                int currentPixel = mapImage.getRGB(x, y);
+        int floorY = Integer.MAX_VALUE;
+        var unknownColors = new HashSet<Integer>();
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                int pixel = mapImage.getRGB(x, y);
                 int xLocation = x * PIXEL_MULTIPLIER;
                 int yLocation = y * PIXEL_MULTIPLIER;
 
-                processPixel(currentPixel, xLocation, yLocation, createdMap);
+                if (pixel == Colors.ground) {
+                    // The floor is the highest ground row; its art is already painted by background.png.
+                    floorY = Math.min(floorY, yLocation);
+                } else if (pixel != Colors.empty && pixel != Colors.border
+                        && !processPixel(pixel, xLocation, yLocation, createdMap)) {
+                    unknownColors.add(pixel);
+                }
             }
         }
 
-        System.out.println("Map is created..");
+        if (floorY != Integer.MAX_VALUE) {
+            createdMap.setBottomBorder(floorY);
+        }
+        if (!unknownColors.isEmpty()) {
+            System.err.println(mapPath + ": unknown map colors "
+                    + unknownColors.stream().map(color -> String.format("0x%08X", color)).toList());
+        }
+
         return createdMap;
     }
 
-    private void processPixel(int pixel, int x, int y, Map map) {
+    private boolean processPixel(int pixel, int x, int y, Map map) {
         if (pixel == Colors.ordinaryBrick) {
             map.addBrick(new OrdinaryBrick(x, y, Images.ordinaryBrick));
         } else if (pixel == Colors.surpriseBrick) {
-            Prize prize = generateRandomPrize(x, y);
-            map.addBrick(new SurpriseBrick(x, y, Images.surpriseBrick, prize));
+            map.addBrick(new SurpriseBrick(x, y, Images.surpriseBrick, generateRandomPrize(x, y)));
         } else if (pixel == Colors.pipe) {
-            map.addGroundBrick(new Pipe(x, y, Images.pipe));
+            map.addBrick(new Pipe(x, y, Images.pipe));
         } else if (pixel == Colors.groundBrick) {
-            map.addGroundBrick(new GroundBrick(x, y, Images.groundBrick));
+            map.addBrick(new GroundBrick(x, y, Images.groundBrick));
         } else if (pixel == Colors.goomba) {
             var enemy = new Roomba(x, y, Images.goombaLeft);
             enemy.setRightImage(Images.goombaRight);
@@ -69,11 +93,14 @@ public class MapLoader {
             map.setMario(new Mario(x, y));
         } else if (pixel == Colors.end) {
             map.setEndPoint(new EndFlag(x + 24, y, Images.endFlag));
+        } else {
+            return false;
         }
+        return true;
     }
 
     private Prize generateRandomPrize(double x, double y) {
-        int random = (int) (Math.random() * 12);
+        int random = (int) (Math.random() * PRIZE_RANDOM_BOUND);
         if (random == 0) {
             return new SuperMushroom(x, y, Images.superMushroom);
         } else if (random == 1) {

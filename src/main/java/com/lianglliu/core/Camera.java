@@ -2,50 +2,49 @@ package com.lianglliu.core;
 
 public class Camera {
 
-    private double x, y;
+    private static final double SHAKE_AMPLITUDE = 4;
+    private static final int SHAKE_FRAMES = 60;
+
+    private volatile double x, y;
     private int frameNumber;
     private boolean shaking;
 
     public Camera() {
-        this.x = 0;
-        this.y = 0;
-        this.frameNumber = 25;
-        this.shaking = false;
+        reset();
     }
 
     public double getX() {
         return x;
     }
 
-    public void setX(double x) {
-        this.x = x;
-    }
-
     public double getY() {
         return y;
     }
 
-    public void setY(double y) {
-        this.y = y;
+    public synchronized void reset() {
+        x = 0;
+        y = 0;
+        frameNumber = 0;
+        shaking = false;
     }
 
-    public void shakeCamera() {
+    public synchronized void shakeCamera() {
         shaking = true;
-        frameNumber = 60;
+        frameNumber = SHAKE_FRAMES;
     }
 
-    public void moveCam(double xAmount, double yAmount) {
-        if (shaking && frameNumber > 0) {
-            int direction = (frameNumber % 2 == 0) ? 1 : -1;
-            x = x + 4 * direction;
-            frameNumber--;
+    public synchronized void moveCam(double xAmount, double yAmount) {
+        if (shaking) {
+            if (frameNumber > 0) {
+                int direction = (frameNumber % 2 == 0) ? 1 : -1;
+                x = x + SHAKE_AMPLITUDE * direction;
+                frameNumber--;
+            } else {
+                shaking = false;
+            }
         } else {
             x = x + xAmount;
             y = y + yAmount;
-        }
-
-        if (frameNumber < 0) {
-            shaking = false;
         }
     }
 }

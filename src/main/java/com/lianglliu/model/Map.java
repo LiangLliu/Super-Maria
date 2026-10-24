@@ -16,21 +16,23 @@ import java.util.ArrayList;
 public class Map {
 
     private double remainingTime;
-    private Mario mario;
+    private final BufferedImage backgroundImage;
+    private final int worldWidth;
     private final ArrayList<Brick> bricks = new ArrayList<>();
     private final ArrayList<Enemy> enemies = new ArrayList<>();
-    private final ArrayList<Brick> groundBricks = new ArrayList<>();
     private final ArrayList<Prize> revealedPrizes = new ArrayList<>();
-    private final ArrayList<Brick> revealedBricks = new ArrayList<>();
+    private final ArrayList<OrdinaryBrick> revealedBricks = new ArrayList<>();
     private final ArrayList<Fireball> fireballs = new ArrayList<>();
+    private Mario mario;
     private EndFlag endPoint;
-    private final BufferedImage backgroundImage;
-    private double bottomBorder = 720 - 96;
+    private double bottomBorder;
     private String path;
 
-    public Map(double remainingTime, BufferedImage backgroundImage) {
-        this.backgroundImage = backgroundImage;
+    public Map(double remainingTime, BufferedImage backgroundImage, int worldWidth, int worldHeight) {
         this.remainingTime = remainingTime;
+        this.backgroundImage = backgroundImage;
+        this.worldWidth = worldWidth;
+        this.bottomBorder = worldHeight; // replaced by the floor found in the map image
     }
 
     public Mario getMario() {
@@ -53,44 +55,24 @@ public class Map {
         return revealedPrizes;
     }
 
-    public ArrayList<Brick> getAllBricks() {
-        var allBricks = new ArrayList<Brick>();
-
-        allBricks.addAll(bricks);
-        allBricks.addAll(groundBricks);
-
-        return allBricks;
+    /**
+     * Live list of every solid tile. Callers only iterate it, never mutate it.
+     */
+    public ArrayList<Brick> getBricks() {
+        return bricks;
     }
 
     public void addBrick(Brick brick) {
-        this.bricks.add(brick);
-    }
-
-    public void addGroundBrick(Brick brick) {
-        this.groundBricks.add(brick);
+        bricks.add(brick);
     }
 
     public void addEnemy(Enemy enemy) {
-        this.enemies.add(enemy);
+        enemies.add(enemy);
     }
 
     public void drawMap(Graphics2D g2) {
-        drawBackground(g2);
-        drawPrizes(g2);
-        drawBricks(g2);
-        drawEnemies(g2);
-        drawFireballs(g2);
-        drawMario(g2);
-        endPoint.draw(g2);
-    }
+        g2.drawImage(backgroundImage, 0, 0, null);
 
-    private void drawFireballs(Graphics2D g2) {
-        for (var fireball : fireballs) {
-            fireball.draw(g2);
-        }
-    }
-
-    private void drawPrizes(Graphics2D g2) {
         for (var prize : revealedPrizes) {
             if (prize instanceof Coin coin) {
                 coin.draw(g2);
@@ -98,36 +80,26 @@ public class Map {
                 boostItem.draw(g2);
             }
         }
-    }
 
-    private void drawBackground(Graphics2D g2) {
-        g2.drawImage(backgroundImage, 0, 0, null);
-    }
-
-    private void drawBricks(Graphics2D g2) {
         for (var brick : bricks) {
-            if (brick != null)
-                brick.draw(g2);
-        }
-
-        for (var brick : groundBricks) {
             brick.draw(g2);
         }
-    }
 
-    private void drawEnemies(Graphics2D g2) {
         for (var enemy : enemies) {
-            if (enemy != null)
-                enemy.draw(g2);
+            enemy.draw(g2);
         }
-    }
 
-    private void drawMario(Graphics2D g2) {
+        for (var fireball : fireballs) {
+            fireball.draw(g2);
+        }
+
         mario.draw(g2);
+        endPoint.draw(g2);
     }
 
     public void updateLocations() {
         mario.updateLocation();
+
         for (var enemy : enemies) {
             enemy.updateLocation();
         }
@@ -144,14 +116,18 @@ public class Map {
             }
         }
 
-        for (var fireball : fireballs) {
+        for (var fireballIterator = fireballs.iterator(); fireballIterator.hasNext(); ) {
+            var fireball = fireballIterator.next();
             fireball.updateLocation();
+            if (fireball.getX() + fireball.getDimension().width < 0 || fireball.getX() > worldWidth) {
+                fireballIterator.remove();
+            }
         }
 
         for (var brickIterator = revealedBricks.iterator(); brickIterator.hasNext(); ) {
-            var brick = (OrdinaryBrick) brickIterator.next();
+            var brick = brickIterator.next();
             brick.animate();
-            if (brick.getFrames() < 0) {
+            if (brick.isFinished()) {
                 bricks.remove(brick);
                 brickIterator.remove();
             }
@@ -164,6 +140,13 @@ public class Map {
         return bottomBorder;
     }
 
+    public void setBottomBorder(double bottomBorder) {
+        this.bottomBorder = bottomBorder;
+        if (endPoint != null) {
+            endPoint.setFloorY((int) bottomBorder);
+        }
+    }
+
     public void addRevealedPrize(Prize prize) {
         revealedPrizes.add(prize);
     }
@@ -174,6 +157,7 @@ public class Map {
 
     public void setEndPoint(EndFlag endPoint) {
         this.endPoint = endPoint;
+        endPoint.setFloorY((int) bottomBorder);
     }
 
     public EndFlag getEndPoint() {

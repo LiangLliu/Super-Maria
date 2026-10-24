@@ -21,6 +21,7 @@ public class UIManager extends JPanel {
     private final Font gameFont;
     private final MapSelection mapSelection;
     private final UIRenderer uiRenderer;
+    private Throwable renderFailure;
 
     public UIManager(GameEngine engine, int width, int height) {
         setPreferredSize(new Dimension(width, height));
@@ -36,37 +37,64 @@ public class UIManager extends JPanel {
 
     @Override
     public void paintComponent(Graphics g) {
-        super.paintComponent(g);
+        try {
+            super.paintComponent(g);
+            render(g);
+        } catch (RuntimeException | LinkageError e) {
+            drawRenderFailure(g);
+            reportOnce(e);
+        }
+    }
 
+    private void render(Graphics g) {
         var g2 = (Graphics2D) g.create();
-        var gameStatus = engine.getGameStatus();
+        try {
+            var gameStatus = engine.getGameStatus();
 
-        switch (gameStatus) {
-            case START_SCREEN -> drawStartScreen(g2);
-            case MAP_SELECTION -> drawMapSelectionScreen(g2);
-            case ABOUT_SCREEN -> drawAboutScreen(g2);
-            case HELP_SCREEN -> drawHelpScreen(g2);
-            case GAME_OVER -> drawGameOverScreen(g2);
-            default -> {
-                var camLocation = engine.getCameraLocation();
-                g2.translate(-camLocation.x, -camLocation.y);
-                engine.drawMap(g2);
-                g2.translate(camLocation.x, camLocation.y);
+            switch (gameStatus) {
+                case START_SCREEN -> drawStartScreen(g2);
+                case MAP_SELECTION -> drawMapSelectionScreen(g2);
+                case ABOUT_SCREEN -> drawAboutScreen(g2);
+                case HELP_SCREEN -> drawHelpScreen(g2);
+                case GAME_OVER -> drawGameOverScreen(g2);
+                default -> {
+                    var camLocation = engine.getCameraLocation();
+                    g2.translate(-camLocation.x, -camLocation.y);
+                    engine.drawMap(g2);
+                    g2.translate(camLocation.x, camLocation.y);
 
-                uiRenderer.drawPoints(g2, engine.getScore());
-                uiRenderer.drawLives(g2, engine.getRemainingLives());
-                uiRenderer.drawCoins(g2, engine.getCoins(), getWidth());
-                uiRenderer.drawTime(g2, engine.getRemainingTime());
+                    uiRenderer.drawPoints(g2, engine.getScore());
+                    uiRenderer.drawLives(g2, engine.getRemainingLives());
+                    uiRenderer.drawCoins(g2, engine.getCoins(), getWidth());
+                    uiRenderer.drawTime(g2, engine.getRemainingTime());
 
-                if (gameStatus == GameStatus.PAUSED) {
-                    drawPauseScreen(g2);
-                } else if (gameStatus == GameStatus.MISSION_PASSED) {
-                    drawVictoryScreen(g2);
+                    if (gameStatus == GameStatus.PAUSED) {
+                        drawPauseScreen(g2);
+                    } else if (gameStatus == GameStatus.MISSION_PASSED) {
+                        drawVictoryScreen(g2);
+                    }
                 }
             }
+        } finally {
+            g2.dispose();
         }
+    }
 
-        g2.dispose();
+    /** Swing retries painting forever, so a broken frame is reported once and shown as text. */
+    private void reportOnce(Throwable failure) {
+        if (renderFailure != null) {
+            return;
+        }
+        renderFailure = failure;
+        failure.printStackTrace();
+    }
+
+    private void drawRenderFailure(Graphics g) {
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, getWidth(), getHeight());
+        g.setColor(Color.RED);
+        g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
+        g.drawString("Render failed - see console for the stack trace", 20, 40);
     }
 
     private void drawVictoryScreen(Graphics2D g2) {

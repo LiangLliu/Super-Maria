@@ -3,13 +3,12 @@ package com.lianglliu.model.hero;
 import java.awt.Graphics;
 
 import com.lianglliu.config.GameConfig;
-import com.lianglliu.core.Camera;
 import com.lianglliu.engine.GameEngine;
 import com.lianglliu.loader.ImageLoader;
 import com.lianglliu.model.GameObject;
 import com.lianglliu.view.Animation;
 
-public class Mario extends GameObject{
+public class Mario extends GameObject {
 
     private int remainingLives;
     private int coins;
@@ -17,7 +16,7 @@ public class Mario extends GameObject{
     private MarioForm marioForm;
     private boolean toRight = true;
 
-    public Mario(double x, double y){
+    public Mario(double x, double y) {
         super(x, y, null);
         setDimension(GameConfig.MARIO_SIZE, GameConfig.MARIO_SIZE);
 
@@ -35,7 +34,7 @@ public class Mario extends GameObject{
     }
 
     @Override
-    public void draw(Graphics g){
+    public void draw(Graphics g) {
         boolean movingInX = (getVelX() != 0);
         boolean movingInY = (getVelY() != 0);
 
@@ -45,32 +44,25 @@ public class Mario extends GameObject{
     }
 
     public void jump(GameEngine engine) {
-        if(!isJumping() && !isFalling()){
+        if (!isJumping() && !isFalling()) {
             setJumping(true);
             setVelY(GameConfig.MARIO_JUMP_VELOCITY);
             engine.playJump();
         }
     }
 
-    public void move(boolean toRight, Camera camera) {
-        if(toRight){
-            setVelX(GameConfig.MARIO_MOVE_SPEED);
-        }
-        else if(camera.getX() < getX()){
-            setVelX(-GameConfig.MARIO_MOVE_SPEED);
-        }
-
+    public void move(boolean toRight) {
+        setVelX(toRight ? GameConfig.MARIO_MOVE_SPEED : -GameConfig.MARIO_MOVE_SPEED);
         this.toRight = toRight;
     }
 
-    public boolean onTouchEnemy(GameEngine engine){
+    public boolean onTouchEnemy(GameEngine engine) {
 
-        if(!marioForm.isSuper() && !marioForm.isFire()){
+        if (!marioForm.isSuper() && !marioForm.isFire()) {
             remainingLives--;
             engine.playMarioDies();
             return true;
-        }
-        else{
+        } else {
             engine.shakeCamera();
             marioForm = marioForm.onTouchEnemy();
             setDimension(GameConfig.MARIO_SIZE, GameConfig.MARIO_SIZE);
@@ -78,7 +70,7 @@ public class Mario extends GameObject{
         }
     }
 
-    public Fireball fire(){
+    public Fireball fire() {
         return marioForm.fire(toRight, getX(), getY());
     }
 
@@ -86,7 +78,7 @@ public class Mario extends GameObject{
         coins++;
     }
 
-    public void acquirePoints(int point){
+    public void acquirePoints(int point) {
         points = points + point;
     }
 

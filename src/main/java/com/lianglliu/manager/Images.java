@@ -7,7 +7,7 @@ import static com.lianglliu.loader.ImageLoader.getSingleton;
 public final class Images {
 
     public static final BufferedImage backgroundImage = getSingleton().loadImage("background.png");
-    public static final BufferedImage sprite = getSingleton().loadImage("sprite.png");
+    public static final BufferedImage sprite = getSingleton().getSprite();
 
     public static final BufferedImage heartIcon = getSingleton().loadImage("heart-icon.png");
     public static final BufferedImage coinIcon = getSingleton().getSubImage(sprite, 1, 5, 48, 48);

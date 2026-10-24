@@ -4,10 +4,20 @@
 
 * Classic Super Mario Bros. game implemented with Java.
 
+## Requirements
+
+* JDK 25 - the Gradle toolchain compiles and runs the game with it.
+
 ## Run
 
 ```shell
 ./gradlew run --quiet
+```
+
+## Test
+
+```shell
+./gradlew test
 ```
 
 ## About game
