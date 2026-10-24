@@ -5,12 +5,12 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Point;
+import java.util.List;
 
 import javax.swing.JPanel;
 
 import com.lianglliu.config.GameConfig;
-import com.lianglliu.engine.GameEngine;
+import com.lianglliu.manager.GameView;
 import com.lianglliu.loader.FontLoader;
 import com.lianglliu.manager.GameStatus;
 import com.lianglliu.loader.Images;
@@ -18,21 +18,21 @@ import com.lianglliu.loader.Images;
 public class UIManager extends JPanel {
 
     private static final long serialVersionUID = 1L;
+    private static final int MAP_TITLE_Y = 150;
 
-    private final transient GameEngine engine;
+    private final transient GameView view;
     private final Font gameFont;
-    private final transient MapSelection mapSelection;
     private final transient UIRenderer uiRenderer;
     private Throwable renderFailure;
 
-    public UIManager(GameEngine engine, int width, int height) {
+    public UIManager(GameView view, int width, int height) {
         setPreferredSize(new Dimension(width, height));
         setMaximumSize(new Dimension(width, height));
         setMinimumSize(new Dimension(width, height));
 
-        this.engine = engine;
+        this.view = view;
 
-        mapSelection = new MapSelection();
+        
         gameFont = FontLoader.getMarioFont();
         uiRenderer = new UIRenderer(gameFont);
     }
@@ -51,7 +51,7 @@ public class UIManager extends JPanel {
     private void render(Graphics g) {
         var g2 = (Graphics2D) g.create();
         try {
-            var gameStatus = engine.getGameStatus();
+            var gameStatus = view.status();
 
             switch (gameStatus) {
                 case START_SCREEN -> drawStartScreen(g2);
@@ -60,15 +60,15 @@ public class UIManager extends JPanel {
                 case HELP_SCREEN -> drawHelpScreen(g2);
                 case GAME_OVER -> drawGameOverScreen(g2);
                 default -> {
-                    var camLocation = engine.getCameraLocation();
+                    var camLocation = view.cameraLocation();
                     g2.translate(-camLocation.x, -camLocation.y);
-                    engine.drawMap(g2);
+                    view.drawMap(g2);
                     g2.translate(camLocation.x, camLocation.y);
 
-                    uiRenderer.drawPoints(g2, engine.getScore());
-                    uiRenderer.drawLives(g2, engine.getRemainingLives());
-                    uiRenderer.drawCoins(g2, engine.getCoins(), getWidth());
-                    uiRenderer.drawTime(g2, engine.getRemainingTime());
+                    uiRenderer.drawPoints(g2, view.score());
+                    uiRenderer.drawLives(g2, view.lives());
+                    uiRenderer.drawCoins(g2, view.coins(), getWidth());
+                    uiRenderer.drawTime(g2, view.remainingTime());
 
                     if (gameStatus == GameStatus.PAUSED) {
                         drawPauseScreen(g2);
@@ -115,7 +115,7 @@ public class UIManager extends JPanel {
         g2.drawImage(Images.gameOverScreen, 0, 0, null);
         g2.setFont(gameFont.deriveFont(50f));
         g2.setColor(new Color(130, 48, 48));
-        var acquiredPoints = "Score: " + engine.getScore();
+        var acquiredPoints = "Score: " + view.score();
         var stringLength = g2.getFontMetrics().stringWidth(acquiredPoints);
         var stringHeight = g2.getFontMetrics().getHeight();
         g2.drawString(acquiredPoints, (getWidth() - stringLength) / 2, getHeight() - stringHeight * 2);
@@ -126,27 +126,27 @@ public class UIManager extends JPanel {
     }
 
     private void drawStartScreen(Graphics2D g2) {
-        int row = engine.getStartScreenSelection().getLineNumber();
+        int row = view.startOptionRow();
         g2.drawImage(Images.startScreenImage, 0, 0, null);
         uiRenderer.drawStartScreenSelectIcon(g2, row);
     }
 
     private void drawMapSelectionScreen(Graphics2D g2) {
+        g2.setColor(Color.BLACK);
+        g2.fillRect(0, 0, getWidth(), getHeight());
         g2.setFont(gameFont.deriveFont(GameConfig.UI.FONT_SIZE_LARGE));
+
+        var title = "Select a Map";
+        g2.setColor(Color.YELLOW);
+        g2.drawString(title, (getWidth() - g2.getFontMetrics().stringWidth(title)) / 2, MAP_TITLE_Y);
+
         g2.setColor(Color.WHITE);
-        mapSelection.draw(g2);
-        uiRenderer.drawMapSelectionIcon(g2, engine.getSelectedMap());
-    }
-
-    public String selectMapViaMouse(Point mouseLocation) {
-        return mapSelection.selectMap(mouseLocation);
-    }
-
-    public String selectMapViaKeyboard(int index) {
-        return mapSelection.selectMap(index);
-    }
-
-    public int changeSelectedMap(int index, boolean up) {
-        return mapSelection.changeSelect(index, up);
+        List<String> names = view.mapNames();
+        for (int i = 0; i < names.size(); i++) {
+            String label = names.get(i).substring(0, names.get(i).lastIndexOf('.'));
+            int y = GameConfig.UI.MAP_SELECTION_Y_OFFSET + i * GameConfig.UI.MAP_SELECTION_Y_SPACING;
+            g2.drawString(label, (getWidth() - g2.getFontMetrics().stringWidth(label)) / 2, y);
+        }
+        uiRenderer.drawMapSelectionIcon(g2, view.selectedMap());
     }
 }

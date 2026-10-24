@@ -34,9 +34,9 @@ final class CollisionResolver {
     boolean resolve(Map map, GameContext context) {
         Mario mario = map.getMario();
 
-        checkBottom(map, mario, context);
+        boolean marioDied = checkBottom(map, mario, context);
         checkTop(map, mario, context);
-        boolean marioDied = checkHorizontal(map, mario, context);
+        marioDied |= checkHorizontal(map, mario, context);
         checkEnemies(map);
         checkBoostItems(map);
         checkPrizeContact(map, mario, context);
@@ -47,7 +47,7 @@ final class CollisionResolver {
         return marioDied;
     }
 
-    private void checkBottom(Map map, Mario mario, GameContext context) {
+    private boolean checkBottom(Map map, Mario mario, GameContext context) {
         var removalList = new ArrayList<GameObject>();
         Rectangle marioBottom = mario.getBottomBounds();
 
@@ -71,13 +71,21 @@ final class CollisionResolver {
             }
         }
 
-        if (mario.getY() + mario.getDimension().height >= map.getBottomBorder()) {
-            mario.setY(map.getBottomBorder() - mario.getDimension().height);
+        int floor = map.floorAt(mario.getX() + mario.getDimension().width / 2.0);
+        boolean fellIntoPit = false;
+        if (floor == Map.NO_FLOOR) {
+            if (mario.getY() > map.getWorldHeight()) {
+                mario.loseLife(context);
+                fellIntoPit = true;
+            }
+        } else if (mario.getY() + mario.getDimension().height >= floor) {
+            mario.setY(floor - mario.getDimension().height);
             mario.setFalling(false);
             mario.setVelY(0);
         }
 
         removeObjects(map, removalList);
+        return fellIntoPit;
     }
 
     private void checkTop(Map map, Mario mario, GameContext context) {
@@ -130,6 +138,8 @@ final class CollisionResolver {
     }
 
     private void checkEnemies(Map map) {
+        var removalList = new ArrayList<GameObject>();
+
         for (Enemy enemy : map.getEnemies()) {
             boolean standsOnBrick = false;
 
@@ -148,19 +158,29 @@ final class CollisionResolver {
                 }
             }
 
-            if (enemy.getY() + enemy.getDimension().height > map.getBottomBorder()) {
+            int floor = map.floorAt(enemy.getX() + enemy.getDimension().width / 2.0);
+            if (floor == Map.NO_FLOOR) {
+                enemy.setFalling(true);
+                if (enemy.getY() > map.getWorldHeight()) {
+                    removalList.add(enemy);
+                }
+                continue;
+            }
+            if (enemy.getY() + enemy.getDimension().height > floor) {
                 enemy.setFalling(false);
                 enemy.setVelY(0);
-                enemy.setY(map.getBottomBorder() - enemy.getDimension().height);
+                enemy.setY(floor - enemy.getDimension().height);
             }
-            if (!standsOnBrick && enemy.getY() < map.getBottomBorder()) {
+            if (!standsOnBrick && enemy.getY() < floor) {
                 enemy.setFalling(true);
             }
         }
+        removeObjects(map, removalList);
     }
 
     private void checkBoostItems(Map map) {
         List<Brick> bricks = map.getBricks();
+        var removalList = new ArrayList<GameObject>();
 
         for (var prize : map.getRevealedPrizes()) {
             if (prize instanceof BoostItem boostItem) {
@@ -168,16 +188,24 @@ final class CollisionResolver {
                 boostItem.setFalling(true);
                 handleBoostItemBrickCollision(boostItem, bricks);
 
-                if (boostItem.getY() + boostItem.getDimension().height > map.getBottomBorder()) {
+                int floor = map.floorAt(boostItem.getX() + boostItem.getDimension().width / 2.0);
+                if (floor == Map.NO_FLOOR) {
+                    if (boostItem.getY() > map.getWorldHeight()) {
+                        removalList.add(boostItem);
+                    }
+                    continue;
+                }
+                if (boostItem.getY() + boostItem.getDimension().height > floor) {
                     boostItem.setFalling(false);
                     boostItem.setVelY(0);
-                    boostItem.setY(map.getBottomBorder() - boostItem.getDimension().height);
+                    boostItem.setY(floor - boostItem.getDimension().height);
                     if (boostItem.getVelX() == 0) {
                         boostItem.setVelX(GameConfig.BOOST_ITEM_SPEED);
                     }
                 }
             }
         }
+        removeObjects(map, removalList);
     }
 
     private void handleBoostItemBrickCollision(BoostItem boostItem, List<Brick> bricks) {
@@ -246,7 +274,7 @@ final class CollisionResolver {
 
         if (mario.getX() >= endPoint.getX() && !endPoint.isTouched()) {
             endPoint.setTouched(true);
-            int height = (int) (map.getBottomBorder() - mario.getY());
+            int height = (int) (map.getBaseFloor() - mario.getY());
             mario.acquirePoints(Math.max(0, height) * GameConfig.Scoring.FLAG_HEIGHT_MULTIPLIER);
         }
     }

@@ -14,6 +14,8 @@ public final class Colors {
     public static final int BORDER = Color.WHITE.getRGB();
     /** Walkable floor. Its art is already part of background.png, so it only defines the floor height. */
     public static final int GROUND = new Color(0x7F3300).getRGB();
+    /** Bottomless column. GROUND wins if a column has both. */
+    public static final int PIT = new Color(0, 0, 128).getRGB();
     public static final int MARIO = new Color(160, 160, 160).getRGB();
     public static final int ORDINARY_BRICK = new Color(0, 0, 255).getRGB();
     public static final int SURPRISE_BRICK = new Color(255, 255, 0).getRGB();

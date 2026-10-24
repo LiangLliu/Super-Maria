@@ -22,7 +22,7 @@ class MapLoaderTest {
 
         assertEquals(172, map.getBricks().size());
         assertEquals(20, map.getEnemies().size());
-        assertEquals(624.0, map.getBottomBorder(), "floor is derived from the ground pixels");
+        assertEquals(624, map.getBaseFloor(), "floor is derived from the ground pixels");
         assertNotNull(map.getMario());
         assertNotNull(map.getEndPoint());
     }
@@ -33,7 +33,7 @@ class MapLoaderTest {
 
         assertEquals(138, map.getBricks().size());
         assertEquals(20, map.getEnemies().size());
-        assertEquals(624.0, map.getBottomBorder());
+        assertEquals(624, map.getBaseFloor());
         assertNotNull(map.getMario());
         assertNotNull(map.getEndPoint());
     }

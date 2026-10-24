@@ -1,4 +1,4 @@
-package com.lianglliu.view;
+package com.lianglliu.manager;
 
 import com.lianglliu.core.IChangeSelector;
 

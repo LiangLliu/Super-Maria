@@ -26,8 +26,8 @@
 |---|---|
 | `model` | Entities and their rules; depends only on `config` |
 | `loader` | Map/sprite/audio resources; turns a map PNG into a `Map` |
-| `manager` | Map lifecycle, collision rules, input actions, sound |
-| `engine` | Game loop, frame pacing, state machine, `GameContext` implementation |
+| `manager` | Map lifecycle, collision rules, menu state, input actions, sound |
+| `engine` | Game loop, frame pacing, state machine, `GameContext`/`GameView` implementations |
 | `view` | Swing panel, HUD and menu screens |
 | `config`, `core`, `async` | Constants, camera/selection helpers, virtual-thread helpers |
 

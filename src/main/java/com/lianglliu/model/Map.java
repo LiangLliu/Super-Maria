@@ -1,5 +1,6 @@
 package com.lianglliu.model;
 
+import com.lianglliu.config.GameConfig;
 import com.lianglliu.model.brick.Brick;
 import com.lianglliu.model.brick.OrdinaryBrick;
 import com.lianglliu.model.enemy.Enemy;
@@ -28,20 +29,51 @@ public class Map {
     private final List<Prize> prizesView = Collections.unmodifiableList(revealedPrizes);
     private final List<Fireball> fireballsView = Collections.unmodifiableList(fireballs);
 
+    /** Returned by {@link #floorAt(double)} when a column has no ground at all. */
+    public static final int NO_FLOOR = -1;
+
     private final BufferedImage backgroundImage;
     private final int worldWidth;
+    private final int worldHeight;
+    private final int[] floorByColumn;
+    private final int baseFloor;
 
     private double remainingTime;
     private Mario mario;
     private EndFlag endPoint;
-    private double bottomBorder;
     private String path;
 
-    public Map(double remainingTime, BufferedImage backgroundImage, int worldWidth, int worldHeight) {
+    /**
+     * @param floorByColumn floor of each 48 px world column, or {@link #NO_FLOOR}
+     * @param baseFloor     the level's main floor, used where a column has no ground of its own
+     */
+    public Map(double remainingTime, BufferedImage backgroundImage, int worldWidth, int worldHeight,
+               int[] floorByColumn, int baseFloor) {
         this.remainingTime = remainingTime;
         this.backgroundImage = backgroundImage;
         this.worldWidth = worldWidth;
-        this.bottomBorder = worldHeight; // replaced by the floor found in the map image
+        this.worldHeight = worldHeight;
+        this.floorByColumn = floorByColumn;
+        this.baseFloor = baseFloor;
+    }
+
+    public int getWorldHeight() {
+        return worldHeight;
+    }
+
+    public int getBaseFloor() {
+        return baseFloor;
+    }
+
+    /** Floor under the given world x, or {@link #NO_FLOOR} for a pit. */
+    public int floorAt(double x) {
+        int column = (int) (x / GameConfig.PIXEL_MULTIPLIER);
+        if (column < 0) {
+            column = 0;
+        } else if (column >= floorByColumn.length) {
+            column = floorByColumn.length - 1;
+        }
+        return floorByColumn[column];
     }
 
     public Mario getMario() {
@@ -143,17 +175,6 @@ public class Map {
         endPoint.updateLocation();
     }
 
-    public double getBottomBorder() {
-        return bottomBorder;
-    }
-
-    public void setBottomBorder(double bottomBorder) {
-        this.bottomBorder = bottomBorder;
-        if (endPoint != null) {
-            endPoint.setFloorY((int) bottomBorder);
-        }
-    }
-
     public void addRevealedPrize(Prize prize) {
         revealedPrizes.add(prize);
     }
@@ -164,7 +185,8 @@ public class Map {
 
     public void setEndPoint(EndFlag endPoint) {
         this.endPoint = endPoint;
-        endPoint.setFloorY((int) bottomBorder);
+        int floor = floorAt(endPoint.getX());
+        endPoint.setFloorY(floor == NO_FLOOR ? baseFloor : floor);
     }
 
     public EndFlag getEndPoint() {

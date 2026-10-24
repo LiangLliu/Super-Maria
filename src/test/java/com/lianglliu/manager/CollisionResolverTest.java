@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CollisionResolverTest {
@@ -52,6 +53,28 @@ class CollisionResolverTest {
         assertEquals(1, mario.getCoins());
         assertEquals(1, context.coins);
         assertFalse(map.getRevealedPrizes().contains(coin));
+    }
+
+    @Test
+    void pitColumnsAreBottomlessAndCostALife() {
+        var pitMap = MapLoader.getSingleton().createMap("maps/pit.png", 100);
+        assertNotNull(pitMap);
+        assertEquals(672, pitMap.getBaseFloor());
+        assertEquals(672, pitMap.floorAt(24));
+        assertEquals(Map.NO_FLOOR, pitMap.floorAt(6 * 48 + 24));
+
+        var pitMario = pitMap.getMario();
+        pitMario.setX(6 * 48 + 12);
+        pitMario.setY(600);
+
+        boolean died = false;
+        for (int frame = 0; frame < 300 && !died; frame++) {
+            pitMap.updateLocations();
+            died = resolver.resolve(pitMap, context);
+        }
+
+        assertTrue(died);
+        assertEquals(2, pitMario.getRemainingLives());
     }
 
     @Test

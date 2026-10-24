@@ -10,16 +10,17 @@ import javax.swing.WindowConstants;
 import com.lianglliu.async.AsyncExecutor;
 import com.lianglliu.config.GameConfig;
 import com.lianglliu.core.Camera;
-import com.lianglliu.manager.ButtonAction;
 import com.lianglliu.manager.GameStatus;
+import com.lianglliu.manager.GameView;
+import com.lianglliu.manager.MapSelection;
 import com.lianglliu.manager.MapManager;
 import com.lianglliu.manager.SoundManager;
 import com.lianglliu.model.GameContext;
 import com.lianglliu.model.brick.OrdinaryBrick;
-import com.lianglliu.view.StartScreenSelection;
+import com.lianglliu.manager.StartScreenSelection;
 import com.lianglliu.view.UIManager;
 
-public class GameEngine implements Runnable, GameContext {
+public class GameEngine implements Runnable, GameContext, GameView {
 
     private final Camera camera = new Camera();
     private MapManager mapManager;
@@ -31,7 +32,7 @@ public class GameEngine implements Runnable, GameContext {
     private volatile boolean repaintRequested = true;
     private Thread thread;
     private StartScreenSelection startScreenSelection = StartScreenSelection.START_GAME;
-    private int selectedMap = 0;
+    private final MapSelection mapSelection = new MapSelection();
     private long lastTimeTick = System.currentTimeMillis();
 
     public GameEngine() {
@@ -83,22 +84,24 @@ public class GameEngine implements Runnable, GameContext {
         soundManager.restartBackground();
     }
 
-    public void selectMapViaMouse() {
-        var path = uiManager.selectMapViaMouse(uiManager.getMousePosition());
-        if (path != null) {
-            createMap(path);
+    public void selectMapAt(int mouseY) {
+        if (gameStatus != GameStatus.MAP_SELECTION) {
+            return;
         }
+        int index = MapSelection.indexAt(mouseY);
+        if (index < 0) {
+            return;
+        }
+        mapSelection.select(index);
+        createMap(mapSelection.selectedName());
     }
 
-    public void selectMapViaKeyboard() {
-        var path = uiManager.selectMapViaKeyboard(selectedMap);
-        if (path != null) {
-            createMap(path);
-        }
+    public void startSelectedMap() {
+        createMap(mapSelection.selectedName());
     }
 
     public void changeSelectedMap(boolean up) {
-        selectedMap = uiManager.changeSelectedMap(selectedMap, up);
+        mapSelection.cycle(up);
         repaintRequested = true;
     }
 
@@ -186,7 +189,7 @@ public class GameEngine implements Runnable, GameContext {
         }
     }
 
-    public void receiveInput(ButtonAction input) {
+    public void receiveInput(Input input) {
         inputHandler.handleInput(input);
     }
 
@@ -216,8 +219,24 @@ public class GameEngine implements Runnable, GameContext {
         camera.shakeCamera();
     }
 
-    public GameStatus getGameStatus() {
+    @Override
+    public GameStatus status() {
         return gameStatus;
+    }
+
+    @Override
+    public int startOptionRow() {
+        return startScreenSelection.getLineNumber();
+    }
+
+    @Override
+    public int selectedMap() {
+        return mapSelection.selected();
+    }
+
+    @Override
+    public java.util.List<String> mapNames() {
+        return mapSelection.names();
     }
 
     public StartScreenSelection getStartScreenSelection() {
@@ -229,27 +248,28 @@ public class GameEngine implements Runnable, GameContext {
         repaintRequested = true;
     }
 
-    public int getScore() {
+    @Override
+    public int score() {
         return mapManager.getScore();
     }
 
-    public int getRemainingLives() {
+    @Override
+    public int lives() {
         return mapManager.getRemainingLives();
     }
 
-    public int getCoins() {
+    @Override
+    public int coins() {
         return mapManager.getCoins();
     }
 
-    public int getSelectedMap() {
-        return selectedMap;
-    }
-
+    @Override
     public void drawMap(Graphics2D g2) {
         mapManager.drawMap(g2);
     }
 
-    public Point getCameraLocation() {
+    @Override
+    public Point cameraLocation() {
         return new Point((int) camera.getX(), (int) camera.getY());
     }
 
@@ -302,7 +322,8 @@ public class GameEngine implements Runnable, GameContext {
         return mapManager;
     }
 
-    public int getRemainingTime() {
+    @Override
+    public int remainingTime() {
         return mapManager.getRemainingTime();
     }
 }

@@ -45,13 +45,18 @@ public final class Mario extends GameObject {
      */
     public boolean onTouchEnemy(GameContext context) {
         if (marioForm.isSmall()) {
-            remainingLives--;
-            context.playMarioDies();
+            loseLife(context);
             return true;
         }
         context.shakeCamera();
         setForm(MarioForm.SMALL);
         return false;
+    }
+
+    /** Costs one life, e.g. after touching an enemy as small Mario or falling into a pit. */
+    public void loseLife(GameContext context) {
+        remainingLives--;
+        context.playMarioDies();
     }
 
     /**

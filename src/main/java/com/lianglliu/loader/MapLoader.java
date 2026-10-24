@@ -17,6 +17,7 @@ import com.lianglliu.model.prize.Prize;
 import com.lianglliu.model.prize.SuperMushroom;
 
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.HashSet;
 
 public class MapLoader {
@@ -35,32 +36,25 @@ public class MapLoader {
 
         int width = mapImage.getWidth();
         int height = mapImage.getHeight();
+        var floors = readFloors(mapImage, width, height);
         var createdMap = new Map(timeLimit, Images.backgroundImage,
-                width * PIXEL_MULTIPLIER, height * PIXEL_MULTIPLIER);
+                width * PIXEL_MULTIPLIER, height * PIXEL_MULTIPLIER, floors.byColumn(), floors.baseFloor());
         String[] paths = mapPath.split("/");
         createdMap.setPath(paths[paths.length - 1]);
 
-        int floorY = Integer.MAX_VALUE;
         var unknownColors = new HashSet<Integer>();
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 int pixel = mapImage.getRGB(x, y);
-                int xLocation = x * PIXEL_MULTIPLIER;
-                int yLocation = y * PIXEL_MULTIPLIER;
-
-                if (pixel == Colors.GROUND) {
-                    // The floor is the highest ground row; its art is already painted by background.png.
-                    floorY = Math.min(floorY, yLocation);
-                } else if (pixel != Colors.EMPTY && pixel != Colors.BORDER
-                        && !processPixel(pixel, xLocation, yLocation, createdMap)) {
+                if (pixel == Colors.EMPTY || pixel == Colors.BORDER
+                        || pixel == Colors.GROUND || pixel == Colors.PIT) {
+                    continue;
+                }
+                if (!processPixel(pixel, x * PIXEL_MULTIPLIER, y * PIXEL_MULTIPLIER, createdMap)) {
                     unknownColors.add(pixel);
                 }
             }
-        }
-
-        if (floorY != Integer.MAX_VALUE) {
-            createdMap.setBottomBorder(floorY);
         }
         if (!unknownColors.isEmpty()) {
             System.err.println(mapPath + ": unknown map colors "
@@ -68,6 +62,46 @@ public class MapLoader {
         }
 
         return createdMap;
+    }
+
+    private record Floors(int[] byColumn, int baseFloor) {
+    }
+
+    /**
+     * The floor of a column is its highest GROUND pixel. A column that only has PIT is
+     * bottomless; every other column inherits the level's base floor.
+     */
+    private Floors readFloors(BufferedImage image, int width, int height) {
+        int[] groundTop = new int[width];
+        boolean[] pit = new boolean[width];
+        Arrays.fill(groundTop, -1);
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                int pixel = image.getRGB(x, y);
+                if (pixel == Colors.GROUND) {
+                    int top = y * PIXEL_MULTIPLIER;
+                    if (groundTop[x] < 0 || top < groundTop[x]) {
+                        groundTop[x] = top;
+                    }
+                } else if (pixel == Colors.PIT) {
+                    pit[x] = true;
+                }
+            }
+        }
+
+        int baseFloor = height * PIXEL_MULTIPLIER;
+        for (int top : groundTop) {
+            if (top >= 0) {
+                baseFloor = Math.min(baseFloor, top);
+            }
+        }
+
+        int[] floors = new int[width];
+        for (int x = 0; x < width; x++) {
+            floors[x] = groundTop[x] >= 0 ? groundTop[x] : (pit[x] ? Map.NO_FLOOR : baseFloor);
+        }
+        return new Floors(floors, baseFloor);
     }
 
     private boolean processPixel(int pixel, int x, int y, Map map) {
