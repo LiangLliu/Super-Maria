@@ -1,5 +1,6 @@
 package com.lianglliu.manager;
 
+import com.lianglliu.config.GameConfig;
 import com.lianglliu.core.Camera;
 import com.lianglliu.loader.MapLoader;
 import com.lianglliu.model.Map;
@@ -75,6 +76,24 @@ class CollisionResolverTest {
 
         assertTrue(died);
         assertEquals(2, pitMario.getRemainingLives());
+    }
+
+    @Test
+    void aThreeColumnPitCanBeJumped() {
+        var pitMap = MapLoader.getSingleton().createMap("maps/pit.png", 100);
+        assertNotNull(pitMap);
+        var runner = pitMap.getMario();
+        runner.setLocation(4 * 48, pitMap.getBaseFloor() - runner.getDimension().height);
+        runner.setVelX(GameConfig.MARIO_MOVE_SPEED);
+        runner.jump(context);
+
+        for (int frame = 0; frame < 60; frame++) {
+            pitMap.updateLocations();
+            resolver.resolve(pitMap, context);
+        }
+
+        assertEquals(3, runner.getRemainingLives(), "the jump must clear the pit");
+        assertTrue(runner.getX() > 9 * 48, "landed at " + runner.getX());
     }
 
     @Test

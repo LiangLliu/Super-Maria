@@ -10,6 +10,7 @@ import com.lianglliu.model.prize.BoostItem;
 import com.lianglliu.model.prize.Coin;
 import com.lianglliu.model.prize.Prize;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -37,6 +38,8 @@ public class Map {
     private final int worldHeight;
     private final int[] floorByColumn;
     private final int baseFloor;
+    /** World-pixel spans {fromX, toX} of bottomless columns. */
+    private final List<int[]> pitSpans;
 
     private double remainingTime;
     private Mario mario;
@@ -55,6 +58,22 @@ public class Map {
         this.worldHeight = worldHeight;
         this.floorByColumn = floorByColumn;
         this.baseFloor = baseFloor;
+        this.pitSpans = findPits(floorByColumn);
+    }
+
+    private static List<int[]> findPits(int[] floorByColumn) {
+        var spans = new ArrayList<int[]>();
+        int start = -1;
+        for (int x = 0; x <= floorByColumn.length; x++) {
+            boolean pit = x < floorByColumn.length && floorByColumn[x] == NO_FLOOR;
+            if (pit && start < 0) {
+                start = x;
+            } else if (!pit && start >= 0) {
+                spans.add(new int[]{start * GameConfig.PIXEL_MULTIPLIER, x * GameConfig.PIXEL_MULTIPLIER});
+                start = -1;
+            }
+        }
+        return List.copyOf(spans);
     }
 
     public int getWorldHeight() {
@@ -96,6 +115,19 @@ public class Map {
         return prizesView;
     }
 
+    /** The ground is baked into background.png, so a pit has to be painted out of it. */
+    private void drawPits(Graphics2D g2) {
+        if (pitSpans.isEmpty()) {
+            return;
+        }
+        var previousColor = g2.getColor();
+        g2.setColor(Color.BLACK);
+        for (int[] span : pitSpans) {
+            g2.fillRect(span[0], baseFloor, span[1] - span[0], worldHeight - baseFloor);
+        }
+        g2.setColor(previousColor);
+    }
+
     /** Read-only list of every solid tile. */
     public List<Brick> getBricks() {
         return bricksView;
@@ -111,6 +143,7 @@ public class Map {
 
     public void drawMap(Graphics2D g2) {
         g2.drawImage(backgroundImage, 0, 0, null);
+        drawPits(g2);
 
         for (var prize : revealedPrizes) {
             if (prize instanceof Coin coin) {

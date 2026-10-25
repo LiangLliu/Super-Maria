@@ -33,6 +33,17 @@
 
 Dependency rule: `model` never imports `engine`, `manager`, `view` or `loader`.
 
+## Level format
+
+A level is a 256x32 PNG, one pixel per 48 px tile, painted with the legend in
+`loader/Colors`: black is empty, white frames the canvas, `#7F3300` is floor and
+`#000080` is a bottomless pit. Bricks, pipes, enemies, Mario and the flag use the
+other legend colors, so a level can be drawn in any pixel editor.
+
+The ground art is baked into `background.png`, so pit columns are painted black
+over it at draw time. `Map 1.png` ships three pits (columns 61-62, 85-86 and
+183-184); enemies that walk into them fall out of the level.
+
 ## About game
 
 You can visit [wikipedia page](https://en.wikipedia.org/wiki/Super_Mario_Bros.) or [Super Mario wiki page](https://www.mariowiki.com/Super_Mario_Bros.) for detailed information about the game.
