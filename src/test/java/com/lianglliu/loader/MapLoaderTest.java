@@ -41,23 +41,32 @@ class MapLoaderTest {
         assertNotNull(map.getEndPoint());
     }
 
-    /** The ground is baked into background.png, so every pit column has to be painted black. */
+    /** Both levels ship three 2-tile pits, and the renderer cuts them out of the baked ground. */
     @Test
-    void pitsArePaintedAsBlackVoids() {
-        var map = load("Map 1.png");
-        int floor = map.getBaseFloor();
-        assertEquals(Map.NO_FLOOR, map.floorAt(61 * 48 + 24.0));
+    void shippedLevelPitsRenderAsBlackVoids() {
+        assertPits("Map 1.png", 61, 85, 183);
+        assertPits("Map 2.png", 69, 86, 152);
+    }
 
+    private static void assertPits(String name, int... firstColumns) {
+        var map = load(name);
+        for (int column : firstColumns) {
+            assertEquals(Map.NO_FLOOR, map.floorAt(column * 48 + 24.0), name + " col " + column);
+            assertEquals(Map.NO_FLOOR, map.floorAt((column + 1) * 48 + 24.0), name + " col " + (column + 1));
+            assertEquals(map.getBaseFloor(), map.floorAt((column - 1) * 48 + 24.0), name + " col " + (column - 1));
+            assertEquals(map.getBaseFloor(), map.floorAt((column + 2) * 48 + 24.0), name + " col " + (column + 2));
+        }
+
+        int pitColumn = firstColumns[0];
+        int floor = map.getBaseFloor();
         var frame = new BufferedImage(1268, 708, BufferedImage.TYPE_INT_RGB);
         var g2 = frame.createGraphics();
-        g2.translate(-(61 * 48 - 500), 0);
+        g2.translate(-(pitColumn * 48 - 500), 0);
         map.drawMap(g2);
         g2.dispose();
 
-        int insidePit = frame.getRGB(524, floor + 20) & 0xFFFFFF;
-        int nextToPit = frame.getRGB(476, floor + 20) & 0xFFFFFF;
-        assertEquals(0, insidePit, "pit column is a black void");
-        assertNotEquals(0, nextToPit, "the ground next to the pit stays");
+        assertEquals(0, frame.getRGB(524, floor + 20) & 0xFFFFFF, name + ": the pit is a black void");
+        assertNotEquals(0, frame.getRGB(476, floor + 20) & 0xFFFFFF, name + ": the ground next to it stays");
     }
 
     @Test

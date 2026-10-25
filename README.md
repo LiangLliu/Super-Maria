@@ -40,9 +40,11 @@ A level is a 256x32 PNG, one pixel per 48 px tile, painted with the legend in
 `#000080` is a bottomless pit. Bricks, pipes, enemies, Mario and the flag use the
 other legend colors, so a level can be drawn in any pixel editor.
 
-The ground art is baked into `background.png`, so pit columns are painted black
-over it at draw time. `Map 1.png` ships three pits (columns 61-62, 85-86 and
-183-184); enemies that walk into them fall out of the level.
+The ground art is baked into `background.png` as a single 96 px band, so the
+level floor is flat by design and pit columns are painted black over it at draw
+time. Both levels ship three 2-tile pits - Map 1 at columns 61-62, 85-86 and
+183-184, Map 2 at 69-70, 86-87 and 152-153 - and enemies that walk into them
+fall out of the level.
 
 ## About game
 
